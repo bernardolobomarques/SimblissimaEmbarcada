@@ -5,7 +5,6 @@ Repositório do grupo simblissima para a disciplina de Sistemas Embarcados e IOT
 # 3118
 
 # 3119
-
 ## Componentes
 
 - Sensor ultrassônico **HC-SR04**
