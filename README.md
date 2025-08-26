@@ -10,7 +10,7 @@ Repositório do grupo simblissima para as disciplinas de Sistemas Embarcados #IB
 - **Tomadas 10A**
 - **Dijuntor 20A**
 
-## App
+### App
 
 O sistema envia as leituras do sensor de corrente para um dashboard web em tempo real.
 
@@ -26,6 +26,6 @@ O sistema envia as leituras do sensor de corrente para um dashboard web em tempo
 - **Botões**
 - **LEDs**
 
-## App
+### App
 
 O sistema envia as leituras do sensor ultrassônico para um dashboard web em tempo real.
