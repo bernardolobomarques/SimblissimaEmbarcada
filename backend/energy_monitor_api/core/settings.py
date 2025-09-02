@@ -69,6 +69,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
 # Para desenvolvimento local, usar SQLite. Para produção, PostgreSQL
+import dj_database_url
+
 if DEBUG:
     DATABASES = {
         'default': {
@@ -77,16 +79,23 @@ if DEBUG:
         }
     }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DATABASE_NAME', default='energy_monitor'),
-            'USER': config('DATABASE_USER', default='postgres'),
-            'PASSWORD': config('DATABASE_PASSWORD', default=''),
-            'HOST': config('DATABASE_HOST', default='localhost'),
-            'PORT': config('DATABASE_PORT', default='5432'),
+    # Configuração para produção usando DATABASE_URL do Render
+    DATABASE_URL = config('DATABASE_URL', default='')
+    if DATABASE_URL:
+        DATABASES = {
+            'default': dj_database_url.parse(DATABASE_URL)
         }
-    }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': config('DATABASE_NAME', default='energy_monitor'),
+                'USER': config('DATABASE_USER', default='postgres'),
+                'PASSWORD': config('DATABASE_PASSWORD', default=''),
+                'HOST': config('DATABASE_HOST', default='localhost'),
+                'PORT': config('DATABASE_PORT', default='5432'),
+            }
+        }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
