@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "IoT Monitor",
+    "slug": "iot-monitor-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#2196F3",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.simblissima.iotmonitor"
+    },
+    "android": {
+      "package": "com.simblissima.iotmonitor",
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "iot-monitor-app",
+  "version": "1.0.0",
+  "description": "IoT Monitor App - Aplicativo Unificado de Monitoramento de Energia e Água",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^13.0.0",
+    "@react-native-async-storage/async-storage": "1.18.2",
+    "@react-navigation/bottom-tabs": "^6.5.0",
+    "@react-navigation/native": "^6.1.0",
+    "@react-navigation/native-stack": "^6.9.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "date-fns": "^2.30.0",
+    "expo": "~49.0.0",
+    "expo-notifications": "^0.20.0",
+    "expo-status-bar": "~1.6.0",
+    "formik": "^2.4.0",
+    "react": "18.2.0",
+    "react-native": "0.72.10",
+    "react-native-chart-kit": "^6.12.0",
+    "react-native-gesture-handler": "~2.12.0",
+    "react-native-paper": "^5.10.0",
+    "react-native-reanimated": "~3.3.0",
+    "react-native-safe-area-context": "4.6.3",
+    "react-native-screens": "~3.22.0",
+    "react-native-svg": "13.9.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "yup": "^1.3.0",
+    "react-native-web": "~0.19.6",
+    "react-dom": "18.2.0",
+    "@expo/webpack-config": "^19.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.2.14",
+    "@types/react-native": "~0.72.2",
+    "jest": "^29.2.1",
+    "typescript": "^5.1.3"
+  },
+  "private": true
+}
