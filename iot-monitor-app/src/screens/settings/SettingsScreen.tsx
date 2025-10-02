@@ -118,12 +118,13 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
+    paddingVertical: 20,
     backgroundColor: COLORS.background,
   },
   emailText: {
     textAlign: 'center',
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: 14,
+    marginTop: 8,
   },
 })

@@ -78,6 +78,8 @@ export default function WaterMonitorScreen() {
     }],
   }
 
+  const chartWidth = screenWidth - 48 // Reduzindo para dar mais espaço
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -131,8 +133,8 @@ export default function WaterMonitorScreen() {
           {readings.length > 0 && (
             <LineChart
               data={chartData}
-              width={screenWidth - 60}
-              height={220}
+              width={chartWidth}
+              height={200}
               chartConfig={{
                 backgroundColor: COLORS.water,
                 backgroundGradientFrom: COLORS.waterLight,
@@ -141,7 +143,10 @@ export default function WaterMonitorScreen() {
                 color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                 style: {
-                  borderRadius: 16,
+                  borderRadius: 12,
+                },
+                propsForLabels: {
+                  fontSize: 10,
                 },
               }}
               bezier
@@ -158,7 +163,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 16,
+    padding: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -167,23 +172,25 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   card: {
-    marginBottom: 16,
-    elevation: 3,
+    marginBottom: 12,
+    elevation: 2,
+    borderRadius: 8,
   },
   cardTitle: {
-    fontSize: 18,
-    marginBottom: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   tankContainer: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 16,
   },
   tank: {
-    width: 120,
-    height: 200,
-    borderWidth: 3,
+    width: 100,
+    height: 160,
+    borderWidth: 2,
     borderColor: '#333',
-    borderRadius: 10,
+    borderRadius: 8,
     overflow: 'hidden',
     justifyContent: 'flex-end',
     backgroundColor: COLORS.grayLight,
@@ -192,21 +199,22 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   levelText: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginTop: 12,
   },
   progressBar: {
-    height: 10,
-    borderRadius: 5,
-    marginVertical: 10,
+    height: 8,
+    borderRadius: 4,
+    marginVertical: 12,
   },
   volumeText: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
+    color: COLORS.textSecondary,
   },
   chart: {
     marginVertical: 8,
-    borderRadius: 16,
+    borderRadius: 12,
   },
 })

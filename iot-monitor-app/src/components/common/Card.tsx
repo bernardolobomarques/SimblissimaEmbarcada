@@ -18,7 +18,7 @@ interface CardProps {
 export default function Card({
   children,
   onPress,
-  elevation = 3,
+  elevation = 2,
   borderLeftColor,
 }: CardProps) {
   return (
@@ -26,7 +26,7 @@ export default function Card({
       style={[
         styles.card,
         { elevation },
-        borderLeftColor && { borderLeftWidth: 4, borderLeftColor },
+        borderLeftColor ? { borderLeftWidth: 3, borderLeftColor } : undefined,
       ]}
       onPress={onPress}
     >
@@ -37,7 +37,8 @@ export default function Card({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 16,
+    marginBottom: 12,
     backgroundColor: COLORS.white,
+    borderRadius: 8,
   },
 })

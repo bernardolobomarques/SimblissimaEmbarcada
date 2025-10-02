@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 16,
+    padding: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -155,8 +155,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   card: {
-    marginBottom: 12,
+    marginBottom: 10,
     elevation: 2,
+    borderRadius: 8,
   },
   unreadCard: {
     backgroundColor: '#FFF9C4',
@@ -165,19 +166,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   message: {
-    fontSize: 16,
-    marginVertical: 8,
+    fontSize: 14,
+    marginVertical: 6,
+    lineHeight: 20,
+    flexWrap: 'wrap',
   },
   timestamp: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
+    marginTop: 4,
   },
   emptyText: {
     textAlign: 'center',
     color: COLORS.textSecondary,
     marginVertical: 20,
+    fontSize: 14,
   },
 })

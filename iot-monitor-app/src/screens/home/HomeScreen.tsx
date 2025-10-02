@@ -103,7 +103,7 @@ export default function HomeScreen() {
           <View style={styles.cardHeader}>
             <Title style={styles.cardTitle}>⚡ Energia</Title>
             <Badge style={styles.badge}>
-              {devicesOnline.energy} online
+              {`${devicesOnline.energy} online`}
             </Badge>
           </View>
           <Paragraph style={[styles.powerValue, { color: COLORS.secondary }]}>
@@ -122,7 +122,7 @@ export default function HomeScreen() {
           <View style={styles.cardHeader}>
             <Title style={styles.cardTitle}>💧 Água</Title>
             <Badge style={styles.badge}>
-              {devicesOnline.water} online
+              {`${devicesOnline.water} online`}
             </Badge>
           </View>
           <Paragraph style={[styles.powerValue, { color: COLORS.water }]}>
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 16,
+    padding: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -169,55 +169,68 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 22,
+    marginBottom: 6,
     color: COLORS.textPrimary,
+    fontWeight: '600',
   },
   welcome: {
-    fontSize: 16,
-    marginBottom: 20,
+    fontSize: 14,
+    marginBottom: 16,
     color: COLORS.textSecondary,
   },
   card: {
-    marginBottom: 16,
-    elevation: 3,
+    marginBottom: 12,
+    elevation: 2,
     backgroundColor: COLORS.white,
+    borderRadius: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
+    flexWrap: 'wrap',
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
   },
   badge: {
     backgroundColor: COLORS.success,
+    marginLeft: 8,
   },
   powerValue: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: 'bold',
+    marginVertical: 4,
+    flexWrap: 'wrap',
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.textSecondary,
+    marginTop: 2,
   },
   statusRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 10,
+    marginTop: 8,
   },
   statusItem: {
     alignItems: 'center',
+    flex: 1,
   },
   statusValue: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.primary,
   },
   statusLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    flexWrap: 'wrap',
   },
 })
