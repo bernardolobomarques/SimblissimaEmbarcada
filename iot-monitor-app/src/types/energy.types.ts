@@ -22,6 +22,21 @@ export interface EnergyStats {
   estimated_cost: number // Custo estimado em R$
 }
 
+// Novo: Estatísticas diárias agregadas
+export interface EnergyDailyStats {
+  id: number
+  device_id: string
+  date: string // YYYY-MM-DD
+  avg_power_watts: number
+  max_power_watts: number
+  min_power_watts: number
+  total_kwh: number
+  reading_count: number
+  estimated_cost: number
+  created_at: string
+  updated_at: string
+}
+
 export interface EnergyDevice {
   device_id: string
   device_name: string
@@ -44,3 +59,4 @@ export interface ChartDataPoint {
   value: number
   label?: string
 }
+

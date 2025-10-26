@@ -22,6 +22,21 @@ export interface WaterStats {
   estimated_empty_hours: number // Horas estimadas até esvaziar
 }
 
+// Novo: Estatísticas diárias agregadas
+export interface WaterDailyStats {
+  id: number
+  device_id: string
+  date: string // YYYY-MM-DD
+  avg_level_percent: number
+  max_level_percent: number
+  min_level_percent: number
+  avg_volume_liters: number
+  consumption_liters: number // Consumo do dia (max - min)
+  reading_count: number
+  created_at: string
+  updated_at: string
+}
+
 export interface WaterDevice {
   device_id: string
   device_name: string
@@ -53,3 +68,4 @@ export interface ConsumptionRate {
   timestamp: string
   estimated_empty_time?: string
 }
+

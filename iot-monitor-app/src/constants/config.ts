@@ -4,8 +4,8 @@
  */
 
 export const SUPABASE_CONFIG = {
-  url: 'https://ybnobvonfxoqv1iafzpl.supabase.co',
-  anonKey: 'YOUR_SUPABASE_ANON_KEY', // TODO: Adicionar chave do dashboard Supabase
+  url: 'https://ybnobvonfxoqvlimfzpl.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlibm9idm9uZnhvcXZsaW1menBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzU5MjYsImV4cCI6MjA3NTAxMTkyNn0.c2fbnHiI4tmfcWVousERTXrc9paM05w2GhoBoeagmOU',
   region: 'sa-east-1',
 }
 
