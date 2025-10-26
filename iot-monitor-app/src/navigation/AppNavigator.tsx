@@ -55,21 +55,10 @@ export default function AppNavigator() {
           headerShown: true,
           headerStyle: {
             backgroundColor: COLORS.primary,
-            elevation: 4,
           },
           headerTintColor: COLORS.white,
           headerTitleStyle: {
-            fontWeight: '600',
-            fontSize: 18,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-          },
-          tabBarStyle: {
-            height: 56,
-            paddingBottom: 4,
-            paddingTop: 4,
+            fontWeight: 'bold',
           },
         })}
       >

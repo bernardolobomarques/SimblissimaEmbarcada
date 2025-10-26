@@ -111,32 +111,30 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    padding: 20,
     justifyContent: 'center',
   },
   title: {
     textAlign: 'center',
-    marginBottom: 8,
-    fontSize: 28,
+    marginBottom: 10,
+    fontSize: 32,
     color: COLORS.primary,
     fontWeight: 'bold',
   },
   subtitle: {
     textAlign: 'center',
-    marginBottom: 32,
-    fontSize: 13,
+    marginBottom: 40,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   input: {
-    marginBottom: 12,
-    backgroundColor: COLORS.white,
+    marginBottom: 15,
   },
   button: {
-    marginTop: 8,
+    marginTop: 10,
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
   },
   buttonContent: {
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
 })

@@ -19,34 +19,27 @@ export default function RegisterScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false)
 
   const handleRegister = async () => {
-    console.log('🔵 handleRegister chamado')
-    
     // Validações
     if (!validateName(fullName)) {
-      console.log('❌ Validação falhou: nome inválido')
       Alert.alert('Erro', 'Nome deve ter no mínimo 2 caracteres')
       return
     }
 
     if (!validateEmail(email)) {
-      console.log('❌ Validação falhou: email inválido')
       Alert.alert('Erro', 'Email inválido')
       return
     }
 
     if (!validatePassword(password)) {
-      console.log('❌ Validação falhou: senha inválida')
       Alert.alert('Erro', 'Senha deve ter no mínimo 6 caracteres')
       return
     }
 
     if (password !== confirmPassword) {
-      console.log('❌ Validação falhou: senhas não coincidem')
       Alert.alert('Erro', 'As senhas não coincidem')
       return
     }
 
-    console.log('✅ Validações passaram, iniciando registro...')
     setLoading(true)
     try {
       const { user, error } = await authService.register({
@@ -55,13 +48,9 @@ export default function RegisterScreen({ navigation }: any) {
         full_name: fullName,
       })
       
-      console.log('📊 Resposta do registro:', { user: user?.email, error: error?.message })
-      
       if (error) {
-        console.log('❌ Erro no registro:', error)
         Alert.alert('Erro no registro', error.message || 'Não foi possível criar a conta')
       } else {
-        console.log('✅ Conta criada com sucesso!')
         Alert.alert(
           'Sucesso',
           'Conta criada com sucesso! Faça login para continuar.',
@@ -74,7 +63,6 @@ export default function RegisterScreen({ navigation }: any) {
         )
       }
     } catch (error: any) {
-      console.log('❌ Exceção no registro:', error)
       Alert.alert('Erro no registro', error.message || 'Ocorreu um erro')
     } finally {
       setLoading(false)
@@ -174,32 +162,30 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    padding: 20,
     justifyContent: 'center',
   },
   title: {
     textAlign: 'center',
-    marginBottom: 8,
-    fontSize: 26,
+    marginBottom: 10,
+    fontSize: 28,
     color: COLORS.primary,
     fontWeight: 'bold',
   },
   subtitle: {
     textAlign: 'center',
-    marginBottom: 24,
-    fontSize: 13,
+    marginBottom: 30,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   input: {
-    marginBottom: 12,
-    backgroundColor: COLORS.white,
+    marginBottom: 15,
   },
   button: {
-    marginTop: 8,
+    marginTop: 10,
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
   },
   buttonContent: {
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
 })

@@ -90,8 +90,6 @@ export default function EnergyMonitorScreen() {
     }],
   }
 
-  const chartWidth = screenWidth - 48 // Reduzindo para dar mais espaço
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -137,8 +135,8 @@ export default function EnergyMonitorScreen() {
           {readings.length > 0 && (
             <LineChart
               data={chartData}
-              width={chartWidth}
-              height={200}
+              width={screenWidth - 60}
+              height={220}
               chartConfig={{
                 backgroundColor: COLORS.secondary,
                 backgroundGradientFrom: COLORS.secondaryLight,
@@ -147,10 +145,7 @@ export default function EnergyMonitorScreen() {
                 color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                 style: {
-                  borderRadius: 12,
-                },
-                propsForLabels: {
-                  fontSize: 10,
+                  borderRadius: 16,
                 },
               }}
               bezier
@@ -167,7 +162,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 12,
+    padding: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -176,35 +171,29 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   card: {
-    marginBottom: 12,
-    elevation: 2,
-    borderRadius: 8,
+    marginBottom: 16,
+    elevation: 3,
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: 4,
   },
   bigNumber: {
-    fontSize: 32,
+    fontSize: 42,
     fontWeight: 'bold',
     color: COLORS.textPrimary,
-    marginVertical: 4,
-    flexWrap: 'wrap',
   },
   sublabel: {
-    fontSize: 13,
+    fontSize: 16,
     color: COLORS.textSecondary,
-    marginTop: 6,
-    flexWrap: 'wrap',
+    marginTop: 8,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: 18,
+    marginBottom: 10,
   },
   chart: {
     marginVertical: 8,
-    borderRadius: 12,
+    borderRadius: 16,
   },
 })
