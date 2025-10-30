@@ -15,7 +15,7 @@ IoT Monitor App - Aplicativo Unificado de Monitoramento de Energia e Água
 
 ### **Descrição**
 
-Aplicativo móvel React Native que unifica dois sistemas IoT independentes: monitoramento de consumo de energia elétrica (usando ESP8266 + sensor ACS712) e monitoramento de nível de água em reservatórios (usando ESP8266 + sensor HC-SR04). O app será apresentado no simpósio SBrT 2025 no IBMEC-RJ.[^11][^12]
+Aplicativo móvel React Native que unifica dois sistemas IoT independentes: monitoramento de consumo de energia elétrica (usando ESP32 + sensor ACS712) e monitoramento de nível de água em reservatórios (usando ESP32 + sensor HC-SR04). O app será apresentado no simpósio SBrT 2025 no IBMEC-RJ.[^11][^12]
 
 ### **Objetivos**
 
@@ -1490,7 +1490,7 @@ Notifications.setNotificationHandler({
 
 ✅ App compila e roda sem erros no iOS e Android
 ✅ Autenticação funciona corretamente com Supabase
-✅ Dados dos ESP8266 aparecem em tempo real
+✅ Dados dos ESP32 aparecem em tempo real
 ✅ Gráficos renderizam corretamente
 ✅ Alertas são gerados automaticamente
 ✅ Navegação fluida entre todas as telas

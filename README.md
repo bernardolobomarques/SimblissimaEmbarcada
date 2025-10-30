@@ -5,7 +5,7 @@ Repositório do grupo simblissima para as disciplinas de Sistemas Embarcados #IB
 ## 3118
 
 ### Componentes
-- **ESP8266**
+- **ESP32**
 - Sensor De Corrente 30a **Acs712**
 - **Tomadas 10A**
 - **Dijuntor 20A**
@@ -17,10 +17,10 @@ O sistema envia as leituras do sensor de corrente para um dashboard web em tempo
 
 ## 3119
 
-### Componentes
+- ### Componentes
 - Sensor ultrassônico **HC-SR04**
 - **Case** para o sensor
-- **ESP8266**
+- **ESP32**
 - **Fonte 5V**
 - **Resistores**
 - **Botões**

@@ -1,7 +1,7 @@
 /**
  * Supabase Edge Function: IoT Data Ingestion
  * 
- * Recebe dados de sensores IoT (ESP8266), valida e armazena no banco.
+ * Recebe dados de sensores IoT (ESP32), valida e armazena no banco.
  * 
  * Deploy:
  * supabase functions deploy iot-ingest

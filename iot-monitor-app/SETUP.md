@@ -102,15 +102,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
 -- Inserir dados de teste
 INSERT INTO energy_readings (device_id, voltage, current_rms, power_watts)
 VALUES 
-  ('esp8266_energy_01', 127, 5.5, 698.5),
-  ('esp8266_energy_01', 127, 6.2, 787.4),
-  ('esp8266_energy_01', 127, 4.8, 609.6);
+  ('esp32_energy_01', 127, 5.5, 698.5),
+  ('esp32_energy_01', 127, 6.2, 787.4),
+  ('esp32_energy_01', 127, 4.8, 609.6);
 
 INSERT INTO water_readings (device_id, distance_cm, water_level_percent, volume_liters)
 VALUES 
-  ('esp8266_water_01', 30, 70, 700),
-  ('esp8266_water_01', 35, 65, 650),
-  ('esp8266_water_01', 28, 72, 720);
+  ('esp32_water_01', 30, 70, 700),
+  ('esp32_water_01', 35, 65, 650),
+  ('esp32_water_01', 28, 72, 720);
 ```
 
 #### 2.4 Configurar Autenticação
@@ -202,7 +202,7 @@ Os erros de TypeScript são esperados até que você execute `npm install`. Depo
 ## 🎯 Próximos Passos
 
 1. ✅ App funcionando localmente
-2. 🔌 Conectar ESP8266 para enviar dados reais
+2. 🔌 Conectar ESP32 para enviar dados reais
 3. 🔔 Configurar notificações push
 4. 📊 Adicionar mais gráficos e análises
 5. 🚀 Fazer build para produção com `eas build`

@@ -103,7 +103,7 @@ const { data: historyData } = useEnergyHistory(deviceId, 30)
 
 ---
 
-### 3. Configuração do ESP8266
+### 3. Configuração do ESP32
 
 #### 3.1 Criar Dispositivo no App
 
@@ -126,11 +126,11 @@ SELECT generate_device_api_key('550e8400-e29b-41d4-a716-446655440000');
 -- Retorna algo como: iot_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890
 ```
 
-#### 3.3 Programar ESP8266
+#### 3.3 Programar ESP32
 
 ```cpp
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -165,16 +165,18 @@ void loop() {
   float currentSum = 0;
   int validSamples = 0;
   
-  for (int i = 0; i < 300; i++) {
-    float sensorValue = analogRead(A0);
-    float voltage = (sensorValue / 1024.0) * 5.0;
-    float current = (voltage - 2.5) / 0.185; // ACS712-5A
-    
+    for (int i = 0; i < 300; i++) {
+    // On ESP32: use an ADC-capable pin (e.g. GPIO34). ADC is 12-bit (0-4095) and Vref ~= 3.3V.
+    // Adjust attenuation/resolution if needed for your board.
+    float sensorValue = analogRead(34);
+    float voltage = (sensorValue / 4095.0) * 3.3;
+    float current = (voltage - 2.5) / 0.185; // ACS712-5A (center ~2.5V)
+
     if (current >= 0 && current < 30) {
       currentSum += current;
       validSamples++;
     }
-    
+
     delay(1000);
   }
   
@@ -300,7 +302,7 @@ ORDER BY created_at DESC;
 
 ### 5. Problemas Comuns e Soluções
 
-#### Problema: ESP8266 não conecta na API
+#### Problema: ESP32 não conecta na API
 **Solução:**
 - Verificar se WiFi está conectado (`WiFi.status() == WL_CONNECTED`)
 - Verificar se API Key está correta
@@ -388,13 +390,13 @@ FROM water_readings;
 - [x] Análise de arquitetura completa
 - [x] Script SQL de migração criado
 - [x] Edge Function de ingestão criada
-- [x] Documentação de API para ESP8266
+- [x] Documentação de API para ESP32
 - [x] Types TypeScript atualizados
 - [ ] Deploy da Edge Function no Supabase
 - [ ] Execução do script SQL no banco
 - [ ] Criação de hooks de dados históricos
 - [ ] Atualização das telas com gráficos
-- [ ] Programação do ESP8266
+- [ ] Programação do ESP32
 - [ ] Teste end-to-end
 
 ---
@@ -404,7 +406,7 @@ FROM water_readings;
 1. `ARCHITECTURE_ANALYSIS.md` - Análise completa de problemas e soluções
 2. `supabase-migration.sql` - Script SQL para rodar no Supabase
 3. `supabase-edge-function-iot-ingest.ts` - Edge Function para receber dados IoT
-4. `IOT_API_DOCS.md` - Documentação completa da API para ESP8266
+4. `IOT_API_DOCS.md` - Documentação completa da API para ESP32
 5. `IMPLEMENTATION_GUIDE.md` - Este guia (você está aqui!)
 
 ---
@@ -414,7 +416,7 @@ FROM water_readings;
 1. **Imediato**: Executar `supabase-migration.sql` no Supabase SQL Editor
 2. **Em seguida**: Deploy da Edge Function
 3. **Depois**: Testar com cURL
-4. **Então**: Programar ESP8266
+4. **Então**: Programar ESP32
 5. **Finalmente**: Atualizar telas do app com dados históricos
 
 ---

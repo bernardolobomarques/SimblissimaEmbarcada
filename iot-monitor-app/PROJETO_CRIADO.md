@@ -129,8 +129,8 @@ iot-monitor-app/
    npm start
    ```
 
-4. **Conectar Hardware ESP8266**
-   - Configurar ESP8266 para enviar dados
+4. **Conectar Hardware ESP32**
+   - Configurar ESP32 para enviar dados
    - Testar leituras em tempo real
 
 ### 📚 Documentação
@@ -167,7 +167,7 @@ iot-monitor-app/
 
 Este aplicativo está pronto para ser apresentado no Simpósio Brasileiro de Telecomunicações (SBrT) 2025 no IBMEC-RJ. Ele demonstra:
 
-- Integração IoT com sensores ESP8266
+- Integração IoT com sensores ESP32
 - Monitoramento em tempo real
 - Backend escalável com Supabase
 - UI/UX profissional com Material Design

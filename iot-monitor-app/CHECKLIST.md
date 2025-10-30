@@ -86,9 +86,9 @@ npm install
 - [ ] Testar leituras em tempo real
 - [ ] Configurar notificações push
 
-### 4. Hardware (ESP8266)
-- [ ] Configurar ESP8266 para energia (ACS712)
-- [ ] Configurar ESP8266 para água (HC-SR04)
+### 4. Hardware (ESP32)
+- [ ] Configurar ESP32 para energia (ACS712)
+- [ ] Configurar ESP32 para água (HC-SR04)
 - [ ] Integrar com Supabase
 - [ ] Testar envio de dados
 

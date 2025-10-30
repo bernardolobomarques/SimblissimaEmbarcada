@@ -1,6 +1,6 @@
 /**
  * Types para monitoramento de água
- * Baseado no sistema ESP8266 + sensor ultrassônico HC-SR04
+ * Baseado no sistema ESP32 + sensor ultrassônico HC-SR04
  */
 
 export interface WaterReading {

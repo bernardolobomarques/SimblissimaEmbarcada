@@ -1,6 +1,9 @@
 # API IoT - Documentação para Dispositivos ESP32
 
 ## 📡 Visão Geral
+# API IoT - Documentação para Dispositivos ESP32
+
+## 📡 Visão Geral
 
 Esta API permite que dispositivos IoT (ESP32) enviem leituras de sensores para o backend Supabase.
 
@@ -174,7 +177,7 @@ X-Device-Type: energy|water
 
 ## 🔄 Lógica de Retry
 
-### Recomendações para ESP8266
+### Recomendações para ESP32
 
 ```cpp
 int retry_count = 0;
@@ -204,7 +207,7 @@ while (retry_count < max_retries) {
 
 ---
 
-## 📐 Cálculos no ESP8266
+## 📐 Cálculos no ESP32
 
 ### Para Sensor de Energia (ACS712)
 
@@ -215,8 +218,9 @@ float currentSum = 0;
 int validSamples = 0;
 
 for (int i = 0; i < SAMPLE_COUNT; i++) {
-  float sensorValue = analogRead(A0);
-  float voltage = (sensorValue / 1024.0) * 5.0;
+  // On ESP32: use an ADC-capable pin (e.g. GPIO34). ADC is 12-bit (0-4095) and Vref ~= 3.3V.
+  float sensorValue = analogRead(34);
+  float voltage = (sensorValue / 4095.0) * 3.3;
   float current = (voltage - 2.5) / 0.185; // ACS712-5A
   
   if (current >= 0 && current < 30) { // Validação
@@ -284,7 +288,7 @@ payload += "}}";
 
 ## 🕐 Timestamp com Timezone
 
-### Obter timestamp ISO8601 no ESP8266
+### Obter timestamp ISO8601 no ESP32
 
 ```cpp
 #include <NTPClient.h>

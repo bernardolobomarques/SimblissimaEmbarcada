@@ -1,6 +1,6 @@
 /**
  * Types para monitoramento de energia
- * Baseado no sistema ESP8266 + sensor ACS712
+ * Baseado no sistema ESP32 + sensor ACS712
  */
 
 export interface EnergyReading {

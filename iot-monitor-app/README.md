@@ -8,8 +8,8 @@ Desenvolvido para o Simpósio Brasileiro de Telecomunicações (SBrT) 2025 no IB
 
 O IoT Monitor é um aplicativo React Native que unifica dois sistemas IoT independentes:
 
-1. **Monitoramento de Energia Elétrica** - ESP8266 + Sensor ACS712
-2. **Monitoramento de Nível de Água** - ESP8266 + Sensor Ultrassônico HC-SR04
+1. **Monitoramento de Energia Elétrica** - ESP32 + Sensor ACS712
+2. **Monitoramento de Nível de Água** - ESP32 + Sensor Ultrassônico HC-SR04
 
 ### ✨ Funcionalidades Principais
 
@@ -160,12 +160,12 @@ Use o Expo Go no seu smartphone ou pressione:
 
 ## 🔌 Integração com Hardware
 
-### ESP8266 - Energia (ACS712)
+### ESP32 - Energia (ACS712)
 
 ```cpp
 // Exemplo de código para enviar dados ao Supabase
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 const char* ssid = "SUA_REDE";
 const char* password = "SUA_SENHA";
@@ -184,7 +184,7 @@ void sendReading(float power) {
 }
 ```
 
-### ESP8266 - Água (HC-SR04)
+### ESP32 - Água (HC-SR04)
 
 ```cpp
 // Similar ao exemplo acima, mas enviando para water_readings

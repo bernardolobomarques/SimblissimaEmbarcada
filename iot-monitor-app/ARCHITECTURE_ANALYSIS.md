@@ -4,7 +4,7 @@
 
 ### Fluxo de Dados
 1. **Sensores IoT** coletam leituras continuamente
-2. **Agregação local** (no ESP8266): Média a cada 5 minutos
+2. **Agregação local** (no ESP32): Média a cada 5 minutos
 3. **Envio para Supabase**: Dados agregados a cada 5 minutos
 4. **App Mobile**: Exibe dados em tempo real e histórico de 30 dias
 
@@ -89,13 +89,7 @@ SELECT AVG(power_watts) FROM energy_readings WHERE timestamp::date = '2025-10-26
 
 ### 6. **Sem Sistema de Autenticação para IoT Devices**
 ```sql
--- Como o ESP8266 autentica no Supabase?
--- Usa anon key? (INSEGURO!)
--- Usa service role key? (PIOR AINDA!)
 ```
-
-**Impacto:**
-- Qualquer pessoa com a anon key pode enviar dados falsos
 - Não há rate limiting
 - Não há validação de origem
 
@@ -167,7 +161,7 @@ INSERT INTO energy_readings (power_watts) VALUES (-500); -- ❌
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    ESP8266 (Sensores)                       │
+│                    ESP32 (Sensores)                         │
 │  - Coleta 1 leitura/segundo                                 │
 │  - Calcula média de 300 leituras (5min)                     │
 │  - Envia payload agregado                                   │
@@ -284,7 +278,7 @@ CREATE TABLE water_daily_stats (
 6. ✅ Implementar sistema de notificações
 7. ✅ Adicionar loading states e error handling
 
-### No ESP8266 (Firmware)
+### No ESP32 (Firmware)
 1. ✅ Armazenar API Key em EEPROM
 2. ✅ Implementar buffer circular para agregação
 3. ✅ Adicionar retry logic para falhas de rede
@@ -301,6 +295,6 @@ Vou criar os seguintes arquivos:
 3. Atualizar types TypeScript
 4. Criar hooks de dados históricos
 5. Atualizar componentes de telas
-6. Documentação de API para ESP8266
+6. Documentação de API para ESP32
 
 Deseja que eu prossiga com a implementação?
