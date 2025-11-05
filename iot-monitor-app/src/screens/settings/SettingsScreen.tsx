@@ -5,6 +5,7 @@
 
 import React from 'react'
 import { View, ScrollView, StyleSheet, Alert } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { List, Divider, Avatar } from 'react-native-paper'
 import { useAuth } from '../../hooks/useAuth'
 import { authService } from '../../services/auth.service'
@@ -12,6 +13,7 @@ import { COLORS } from '../../constants/colors'
 
 export default function SettingsScreen() {
   const { user } = useAuth()
+  const navigation = useNavigation()
 
   const handleLogout = () => {
     Alert.alert(
@@ -49,15 +51,16 @@ export default function SettingsScreen() {
         <List.Item
           title="Perfil"
           description={user?.email}
-          left={props => <List.Icon {...props} icon="account" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
+          left={() => <List.Icon icon="account" />}
+          right={() => <List.Icon icon="chevron-right" />}
         />
         <Divider />
         <List.Item
           title="Dispositivos"
           description="Gerenciar dispositivos IoT"
-          left={props => <List.Icon {...props} icon="devices" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
+          left={() => <List.Icon icon="devices" />}
+          right={() => <List.Icon icon="chevron-right" />}
+          onPress={() => navigation.navigate('DeviceConfig' as never)}
         />
       </List.Section>
 
@@ -68,15 +71,28 @@ export default function SettingsScreen() {
         <List.Item
           title="Tarifa de Energia"
           description="R$ 0,75 por kWh"
-          left={props => <List.Icon {...props} icon="currency-brl" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
+          left={() => <List.Icon icon="currency-brl" />}
+          right={() => <List.Icon icon="chevron-right" />}
         />
         <Divider />
         <List.Item
           title="Notificações"
           description="Configurar alertas"
-          left={props => <List.Icon {...props} icon="bell" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
+          left={() => <List.Icon icon="bell" />}
+          right={() => <List.Icon icon="chevron-right" />}
+        />
+      </List.Section>
+
+      <Divider />
+
+      <List.Section>
+        <List.Subheader>Demonstração</List.Subheader>
+        <List.Item
+          title="Corrente demonstrativa"
+          description="Ajustar valores exibidos na tela de energia"
+          left={() => <List.Icon icon="flash" />}
+          right={() => <List.Icon icon="chevron-right" />}
+          onPress={() => navigation.navigate('DeviceConfig' as never)}
         />
       </List.Section>
 
@@ -87,13 +103,13 @@ export default function SettingsScreen() {
         <List.Item
           title="Versão"
           description="1.0.0"
-          left={props => <List.Icon {...props} icon="information" />}
+          left={() => <List.Icon icon="information" />}
         />
         <Divider />
         <List.Item
           title="SBrT 2025 - IBMEC-RJ"
           description="Simpósio Brasileiro de Telecomunicações"
-          left={props => <List.Icon {...props} icon="school" />}
+          left={() => <List.Icon icon="school" />}
         />
       </List.Section>
 
@@ -102,7 +118,7 @@ export default function SettingsScreen() {
       <List.Section>
         <List.Item
           title="Sair"
-          left={props => <List.Icon {...props} icon="logout" color={COLORS.error} />}
+          left={() => <List.Icon icon="logout" color={COLORS.error} />}
           titleStyle={{ color: COLORS.error }}
           onPress={handleLogout}
         />

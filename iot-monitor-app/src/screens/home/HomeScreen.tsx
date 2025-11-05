@@ -5,12 +5,20 @@
 
 import React, { useEffect, useState } from 'react'
 import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native'
-import { Card, Title, Paragraph, Badge, ActivityIndicator } from 'react-native-paper'
+import { ActivityIndicator, Badge, Button, Card, Chip, Paragraph, Title } from 'react-native-paper'
 import { useNavigation } from '@react-navigation/native'
 import { supabase } from '../../services/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants/colors'
 import { formatPower, formatPercent } from '../../utils/formatters'
+
+const safeConsole: any = (globalThis as any)?.console
+
+type DashboardDevice = {
+  device_type: 'energy' | 'water'
+  is_active: boolean
+  metadata?: Record<string, any>
+}
 
 export default function HomeScreen() {
   const { user } = useAuth()
@@ -20,6 +28,12 @@ export default function HomeScreen() {
   const [waterLevel, setWaterLevel] = useState(0)
   const [devicesOnline, setDevicesOnline] = useState({ energy: 0, water: 0 })
   const [loading, setLoading] = useState(true)
+  const [demoConfig, setDemoConfig] = useState<{
+    label: string
+    nominalCurrent: number
+    maxCurrent: number
+    voltage: number
+  } | null>(null)
 
   useEffect(() => {
     loadData()
@@ -49,20 +63,32 @@ export default function HomeScreen() {
       
       if (waterData) setWaterLevel(waterData.water_level_percent)
 
-      // Contar dispositivos online
+      // Contar dispositivos online e carregar metadados
       const { data: devices } = await supabase
         .from('devices')
-        .select('device_type, is_active')
+        .select('device_type, is_active, metadata')
         .eq('is_active', true)
         .eq('user_id', user?.id)
 
       if (devices) {
-        const energyCount = devices.filter(d => d.device_type === 'energy').length
-        const waterCount = devices.filter(d => d.device_type === 'water').length
+        const energyDevices = devices.filter((d: DashboardDevice) => d.device_type === 'energy')
+        const waterDevices = devices.filter((d: DashboardDevice) => d.device_type === 'water')
+        const energyCount = energyDevices.length
+        const waterCount = waterDevices.length
         setDevicesOnline({ energy: energyCount, water: waterCount })
+
+        if (energyDevices.length > 0) {
+          const metadata = energyDevices[0].metadata || {}
+          setDemoConfig({
+            label: metadata.demo_scenario_label || 'Cenário demonstrativo',
+            nominalCurrent: Number(metadata.demo_nominal_current ?? 15),
+            maxCurrent: Number(metadata.demo_max_current ?? 20),
+            voltage: Number(metadata.demo_nominal_voltage ?? 127),
+          })
+        }
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error)
+      safeConsole?.error?.('Erro ao carregar dados:', error)
     } finally {
       setLoading(false)
     }
@@ -93,6 +119,42 @@ export default function HomeScreen() {
       <Paragraph style={styles.welcome}>
         Bem-vindo, {user?.email?.split('@')[0]}!
       </Paragraph>
+
+        {demoConfig && (
+          <Card style={styles.demoCard}>
+            <Card.Content>
+              <View style={styles.demoHeader}>
+                <Paragraph style={styles.demoSubtitle}>Corrente demonstrativa</Paragraph>
+                <Chip icon="flash" style={styles.demoChip}>Energia</Chip>
+              </View>
+              <Title style={styles.demoTitle}>{demoConfig.label}</Title>
+              <View style={styles.demoRow}>
+                <View style={styles.demoStat}>
+                  <Paragraph style={styles.demoLabel}>Corrente</Paragraph>
+                  <Title style={styles.demoValue}>{demoConfig.nominalCurrent.toFixed(1)} A</Title>
+                </View>
+                <View style={styles.demoDivider} />
+                <View style={styles.demoStat}>
+                  <Paragraph style={styles.demoLabel}>Limite</Paragraph>
+                  <Title style={styles.demoValue}>{demoConfig.maxCurrent.toFixed(1)} A</Title>
+                </View>
+                <View style={styles.demoDivider} />
+                <View style={styles.demoStat}>
+                  <Paragraph style={styles.demoLabel}>Tensão</Paragraph>
+                  <Title style={styles.demoValue}>{demoConfig.voltage.toFixed(0)} V</Title>
+                </View>
+              </View>
+              <Button
+                icon="tune"
+                mode="outlined"
+                onPress={() => navigation.navigate('DeviceConfig' as never)}
+                style={styles.demoButton}
+              >
+                Ajustar apresentação
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
 
       {/* Card Energia */}
       <Card
@@ -182,6 +244,59 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     elevation: 3,
     backgroundColor: COLORS.white,
+  },
+  demoCard: {
+    marginBottom: 20,
+    borderRadius: 18,
+    elevation: 4,
+  },
+  demoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  demoSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  demoChip: {
+    backgroundColor: COLORS.secondary,
+  },
+  demoTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  demoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  demoStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  demoLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  demoValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.secondary,
+  },
+  demoDivider: {
+    width: 1,
+    height: 48,
+    backgroundColor: COLORS.grayLight,
+    borderRadius: 1,
+  },
+  demoButton: {
+    alignSelf: 'flex-end',
+    marginTop: 4,
   },
   cardHeader: {
     flexDirection: 'row',

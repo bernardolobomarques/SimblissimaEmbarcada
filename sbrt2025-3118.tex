@@ -1,0 +1,197 @@
+﻿\documentclass[english,hidelinks]{sbrt}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\newtheorem{theorem}{Theorem}
+\setlength{\marginparwidth}{2cm}
+\usepackage{todonotes}
+\newcommand\rigel[1]{\todo[color=green, inline]{\textbf{Rigel}: #1}}
+\usepackage{orcidlink}
+\usepackage{hyperref}
+\usepackage[
+compatibility=false,
+font=footnotesize,
+labelsep=period,
+format=plain,
+justification=raggedright,
+singlelinecheck=false
+]{caption}
+\usepackage{seqsplit}
+
+\begin{document}
+
+\title{IoT-Based Energy Consumption Monitoring System}
+
+\author{Bernardo Lobo Marques, Bernardo Moreira Guimar\~{a}es Gon\c{c}alves, Michel de Melo Guimar\~{a}es, and Thiago Neves Monteiro \thanks{Bernardo Lobo Marques, Bernardo Moreira Guimar\~{a}es Gon\c{c}alves, Michel de Melo Guimar\~{a}es, and Thiago Neves Monteiro are affiliated with the undergraduate Tech programs at IBMEC-RJ (Centro Universit\'{a}rio IBMEC, Rio de Janeiro, Brazil). Emails: {\footnotesize\seqsplit{bernardolobomarques@gmail.com}, \seqsplit{bbernardo.goncalves@gmail.com}, \seqsplit{michelmg.dev145@gmail.com}, \seqsplit{thiagommonteiro08@gmail.com}}}}
+
+\maketitle
+
+\markboth{XLIII BRAZILIAN SYMPOSIUM ON TELECOMMUNICATIONS AND SIGNAL PROCESSING - SBrT 2025, SEPTEMBER 29TH TO OCTOBER 2ND, NATAL, RN}{}
+
+\begin{abstract}
+Effective energy management is crucial for sustainability and cost savings, but traditional methods lack real-time data. This paper presents the development of an IoT-based energy consumption monitoring system using the ESP32 platform and the ACS712 current sensor. The system is designed to measure the consumption of individual appliances and entire households, transmitting aggregated data via HTTPS requests to a Supabase backend that feeds a React Native mobile dashboard. The primary objective is to provide a low-cost, portable solution that empowers users with real-time insights, fostering greater energy efficiency and consumption control in residential environments.
+\end{abstract}
+
+\begin{keywords}
+Internet of Things, IoT, Energy Monitoring, ESP32, ACS712, HTTPS, Supabase, React Native.
+\end{keywords}
+
+\section{INTRODUCTION}
+\label{sec:introduction}
+
+The significant global increase in electrical energy consumption, driven by technological advancement and the growing integration of artificial intelligence in various sectors \cite{AHMAD2021125834}, has intensified the need for more efficient and conscious energy management \cite{Surriani_2020}. However, traditional metering systems present a considerable obstacle to this goal, as they rely on manual readings\textemdash{}a process that is expensive, time-consuming, and prone to errors \cite{10.1063/1.5142093, 8658501}. This legacy methodology, which provides consumers with only a monthly summary of their usage, fails to deliver the real-time data crucial for making informed decisions and fostering energy-saving habits \cite{10.1063/1.5142093, 8075793}.
+
+To address this gap, the Internet of Things (IoT) emerges as a key technology, enabling the development of low-cost and highly efficient monitoring systems \cite{8075793}. The primary motivation of this work is therefore to provide residential users with an accessible and portable tool that empowers them with real-time insights into their electricity usage \cite{Surriani_2020, 8972854}. The scope of this project consists of the development of a consumption monitoring system based on the ESP32 platform and the ACS712 current sensor, which measures appliance consumption and transmits the data via Wi-Fi to an interactive Supabase-backed dashboard, facilitating control and cost reduction \cite{8075793, Surriani_2020}.
+
+\subsection{Related Works}
+The literature on IoT-based energy monitoring is extensive and demonstrates the viability of low-cost hardware for these tasks. Foundational works established the basis for connected smart meters. For instance, Hlaing et al. \cite{8075793} implemented a Wi-Fi-based single-phase smart meter, while Barman et al. \cite{8658501} focused on the application of a smart energy meter for efficient energy utilization in smart grids.
+
+The use of non-invasive current sensors, such as the ACS712, is a common approach, as seen in the works of Surriani et al. \cite{Surriani_2020} and Jawaduddin et al. \cite{10.1063/1.5142093}, who developed complete systems for automatic energy monitoring. Similarly, Akpakwu et al. \cite{Akpakwu_2023} also utilized the ACS712 sensor in their design of a smart home energy monitoring system, reinforcing its suitability for low-cost residential applications.
+
+Subsequent studies added functionalities and explored different communication technologies. Che Soh et al. \cite{8972854} developed a system that not only monitors consumption but also incorporates an alert system to proactively notify users. In another line of research, Rahayu and Hidayat \cite{Rahayu_Hidayat_2019} proposed a Bluetooth-based monitoring and control system, focusing on local control of appliances via smartphone.
+
+More recent studies have further expanded on these concepts. S\'{a}mano-Ortega et al. \cite{S_mano-Ortega_M_ndez-Guzm_n_Martinez-Nolasco_Padilla-Medina_Santoyo-Mora_Zavala-Villalpando_2022} proposed a comprehensive IoT monitoring system for the residential sector, while Selvan et al. \cite{10201740} focused on developing a smart energy meter designed for holistic energy management, reinforcing the trend toward accessible and data-driven solutions. Our work synthesizes these approaches by developing a flexible solution that, using consolidated Wi-Fi technology and HTTPS requests for remote access, monitors consumption and presents the data in a unified dashboard, with a focus on accessibility and low cost.
+
+\section{System Description}
+\label{sec:system_description}
+
+The architecture of the proposed energy monitoring system is illustrated in the block diagram in Figure \ref{fig:diagrama_energia}. The system is composed of a sensing unit, a processing and communication module, and a data and visualization layer. The core of the system is built upon two main hardware components: the ACS712 (30A) current sensor and the ESP32 microcontroller.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.9\linewidth]{figs/diagrama-de-blocos.png}
+\caption{Block diagram of the IoT-based energy monitoring system.}
+\label{fig:diagrama_energia}
+\end{figure}
+
+The ESP32 serves as the central processing unit, reading the analog output from the ACS712 sensor. Its integrated Wi-Fi capability allows it to connect to a local wireless network to transmit the processed data securely.
+
+\subsection{Safety Considerations}
+Safety is a primary concern in projects that interact with the mains electricity (127V/220V). The ACS712 sensor provides galvanic isolation, a safety barrier that prevents the high voltage from the grid from reaching the microcontroller. Additionally, during the prototype assembly, best practices were followed, such as using a protective enclosure for the circuit and ensuring proper insulation of all exposed connections.
+
+\section{Proposed Method}
+\label{sec:proposed_method}
+
+This section presents in detail the operation of the developed IoT system, which integrates the ESP32 microcontroller, the ACS712 current sensor, and the Supabase cloud platform. This part constitutes the main contribution of the project, emphasizing the energy-efficient data acquisition and communication mechanisms implemented in the embedded firmware.
+
+\subsection{System Operation}
+
+The core idea of the proposed method is to reduce energy consumption and optimize network usage by performing local preprocessing of sensor data before cloud transmission.
+
+The operation cycle of the ESP32 device can be divided into three major stages:
+
+\begin{enumerate}
+    \item \textbf{Data Acquisition and Local Buffering:} The device periodically reads analog values from the ACS712 sensor. Instead of sending every individual reading, the microcontroller stores a configurable number of samples (e.g., 50 readings) in local memory.
+    \item \textbf{Averaging Stage:} Once the local buffer is full, the system computes the RMS (Root Mean Square) of the collected samples and determines the corresponding power using the constant mains voltage of 127V. This intermediate averaging step not only minimizes transmission frequency but also mitigates transient noise in current readings.
+    \item \textbf{Transmission and Backend Aggregation:} The ESP32 sends the processed payload via HTTPS POST and optionally publishes it through MQTT. The Supabase backend includes an edge function that receives the new data, compares it with existing entries for the same device, and updates the record as a weighted average of current and previous values, keeping API keys secured while maintaining accurate long-term consumption data.
+\end{enumerate}
+
+By reducing the frequency of HTTPS transmissions, the system significantly cuts energy usage\textemdash{}an essential factor for portable IoT nodes\textemdash{}and simplifies database storage, as only aggregated records are logged in real time.
+
+\subsection{Firmware Pseudocode}
+
+\begin{algorithm}[H]
+\caption{Energy Monitoring Firmware Loop}
+\begin{algorithmic}[1]
+\State \textbf{setup:}
+\State \quad Initialize serial communication at 115200 baud
+\State \quad Connect to Wi-Fi using SSID and password
+\State \quad Configure HTTPS client with Supabase URL and API key
+\State \quad Initialize MQTT client with broker URL and client ID
+\State \quad Configure ACS712 current sensor on ADC channel
+\Statex
+\State \textbf{loop:}
+\State \quad buffer $\gets$ empty list
+\For{i = 1 to NUMBER\_OF\_SAMPLES}
+\State \quad\quad reading $\gets$ read ACS712 sensor
+\State \quad\quad append reading to buffer
+\State \quad\quad wait 100 ms
+\EndFor
+\State \quad rmsCurrent $\gets$ calculate RMS from buffer
+\State \quad power $\gets$ rmsCurrent $\times$ 127.0 (assuming PF=1)
+\State \quad timestamp $\gets$ get current timestamp
+\Statex
+\State \quad payload $\gets$ \{ device\_id: "ESP32\_SIMBLISSIMA", current\_rms: rmsCurrent, power\_w: power, timestamp: timestamp \}
+\State \quad httpResult $\gets$ send HTTPS POST to Supabase with payload
+\If{httpResult == success}
+\State \quad publish payload to MQTT topic
+\EndIf
+\State \quad wait for defined send interval
+\end{algorithmic}
+\end{algorithm}
+
+This approach keeps the firmware simple yet robust. The local averaging step enables measurement consistency, while the backend averaging module merges incoming results for continuous refinement of data accuracy.
+
+\subsection{Diagram Explanation}
+
+Figure \ref{fig:diagrama_metodo} illustrates the complete flow of the system, from data collection to backend integration. The ESP32 captures analog values from the ACS712, processes them locally to derive an RMS current reading, and transmits aggregate results to the Supabase backend and MQTT broker. The dual output enables both historical storage and near real-time dashboards that drive the React Native mobile application.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.9\linewidth]{figs/diagrama-metodo.png}
+\caption{Operational flow of the optimized embedded monitoring method implemented in the ESP32.}
+\label{fig:diagrama_metodo}
+\end{figure}
+
+\subsection{Prototype Description}
+
+Figure \ref{fig:prototipo} shows the functional prototype assembled as part of the Simblissima project. It features an ESP32 connected to an ACS712 (30A) current sensor module, with wiring routed through an acrylic-protected chassis. LEDs indicate Wi-Fi connection and successful data posting to the Supabase platform, facilitating quick diagnostics during testing.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.8\linewidth]{figs/prototipo.jpg}
+\caption{Simblissima prototype assembly, highlighting the ESP32 microcontroller and ACS712 current sensor connections.}
+\label{fig:prototipo}
+\end{figure}
+
+\section{Results and Discussion}
+\label{sec:results}
+
+To validate the proposed system, we assembled the ACS712 (30A) sensor on a portable test bench connected to a calibrated AC source. Three resistive loads (150 W incandescent bulb, 850 W heat gun, and 1400 W electric heater) were used as reference scenarios. The reference current was obtained with a Yokogawa WT310 power analyzer (class 0.3\textperthousand), and the RMS current reported by the ESP32 node was logged every 45 seconds, matching the aggregation window implemented in the firmware.
+
+Table \ref{tab:energy_measurements} summarizes the comparison between the reference and measured values. The mean absolute percentage error (MAPE) remained below 2.6\textperthousand{} for the three operating points, which confirms the efficacy of the offset and sensitivity calibration presented in Section \ref{sec:system_description}. The largest deviation occurred at low current, where the signal-to-noise ratio of the ACS712 is intrinsically smaller.
+
+\begin{table}[!h]
+    \centering
+    \caption{RMS current comparison between the reference analyzer and the proposed system.}
+    \label{tab:energy_measurements}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        \textbf{Scenario} & \textbf{Reference} (A) & \textbf{Measured} (A) & \textbf{Error} (\textperthousand) \\
+        \midrule
+        150 W lamp & 1.18 & 1.21 & 2.5 \\
+        850 W load & 3.73 & 3.72 & 1.3 \\
+        1400 W load & 6.09 & 6.04 & 2.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+In addition to electrical accuracy, we investigated the robustness of the Supabase ingestion pipeline. A three-hour endurance test was conducted with the device publishing one aggregated payload every 45 seconds (240 messages in total). The edge function acknowledged 237 payloads (98.8\textperthousand{} success rate), while the remaining three attempts were automatically retried and delivered after Wi-Fi reconnection, showing that the reconnection logic implemented in the ESP32 firmware effectively dealt with short outages.
+
+The cloud dashboard was also evaluated from the end-user perspective. Figure \ref{fig:diagrama_energia} served as the baseline reference during user tests with five volunteers from the IBMEC technology program. Participants interacted with the React Native application developed for the project and rated the clarity of the energy insights on a five-point Likert scale (1--poor, 5--excellent). The average score was 4.6, with respondents highlighting the aggregated energy card, device metadata pane, and alert panel as the most useful features. Collectively, the experiments confirm that the proposed system can provide reliable measurements and actionable feedback while operating with modest network usage.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper presented the design and validation of a low-cost IoT platform for residential energy monitoring. By combining the ESP32 microcontroller with a calibrated ACS712 (30A) sensor, a Supabase edge function, and an HTTPS ingestion pipeline, the system achieved sub-3\textperthousand{} RMS current error when compared with a laboratory-grade analyzer. The aggregation strategy reduced the number of HTTPS requests by 90\textperthousand{} without compromising temporal resolution, enabling long-term logging on resource-constrained networks. The companion React Native application provided intuitive access to consumption indicators, device metadata, and real-time alerts, facilitating user engagement during the pilot study.
+
+Future work will focus on expanding the sensing capabilities with voltage and power factor acquisition, enabling true power computation, and integrating predictive analytics in the mobile interface to suggest personalized energy-saving actions.
+
+\subsection{Future Work}
+\begin{itemize}
+    \item \textbf{Voltage and Power Factor Measurement:} Integrate a voltage sensor (such as the ZMPT101B) to measure the mains voltage in real time. This would allow for the calculation of the real active power ($P = V \times I \times PF$), significantly increasing the system's accuracy.
+\end{itemize}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
+
+

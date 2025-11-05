@@ -1,0 +1,227 @@
+﻿%% ------------- Modified English version ------------
+\documentclass[english,hidelinks]{sbrt}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\newtheorem{theorem}{Theorem}
+\setlength{\marginparwidth}{2cm}
+\usepackage{todonotes}
+\newcommand\rigel[1]{\todo[color=green, inline]{\textbf{Rigel}: #1}}
+\usepackage{orcidlink}
+\usepackage{hyperref}
+\usepackage[
+compatibility=false,
+font=footnotesize,
+labelsep=period,
+format=plain,
+justification=raggedright,
+singlelinecheck=false
+]{caption}
+\usepackage{seqsplit}
+
+% --- TITLE AND AUTHOR MOVED HERE (CORRECT PREAMBLE LOCATION) ---
+\title{IoT-Based Smart Water Tank Monitoring System}
+
+\author{Bernardo Lobo Marques, Bernardo Moreira Guimar\~{a}es Gon\c{c}alves, Michel de Melo Guimar\~{a}es, and Thiago Neves Monteiro \thanks{Bernardo Lobo Marques, Bernardo Moreira Guimar\~{a}es Gon\c{c}alves, Michel de Melo Guimar\~{a}es, and Thiago Neves Monteiro are affiliated with the undergraduate Tech programs at IBMEC-RJ (Centro Universit\'{a}rio IBMEC, Rio de Janeiro, Brazil). Emails: {\footnotesize\seqsplit{bernardolobomarques@gmail.com}, \seqsplit{bbernardo.goncalves@gmail.com}, \seqsplit{michelmg.dev145@gmail.com}, \seqsplit{thiagommonteiro08@gmail.com}}.}}
+% --- END OF MOVED SECTION ---
+
+\begin{document}
+
+\maketitle
+
+\markboth{XLIII BRAZILIAN SYMPOSIUM ON TELECOMMUNICATIONS AND SIGNAL PROCESSING - SBrT 2025, SEPTEMBER 29TH TO OCTOBER 2ND, NATAL, RN}{}
+
+\begin{abstract}
+Manual monitoring of water tank levels is often inefficient and impractical, leading to unforeseen shortages and potential water waste. This paper presents the development of an IoT-based system for real-time monitoring of water levels in residential tanks. The system utilizes an ultrasonic sensor to measure the distance to the water surface and an ESP32 microcontroller to process these data and transmit aggregated readings via HTTPS to a Supabase backend. The collected information is displayed on an interactive React Native dashboard that allows users to track current volume, analyze consumption patterns, and receive critical alerts for low water levels. Furthermore, the system can be enhanced with lightweight IoT protocols such as MQTT, enabling scalable communication between multiple devices and cloud services, thus increasing reliability and interoperability within smart water management ecosystems. The primary objective is to offer a low-cost automated solution that promotes efficient water management and prevents shortages in residential environments.
+\end{abstract}
+
+\begin{keywords}
+IoT, Water Level Monitoring, Ultrasonic Sensor, ESP32, Supabase, React Native.
+\end{keywords}
+
+\section{INTRODUCTION}
+
+Efficient water resource management is a cornerstone of sustainable urban development, and accuracy in water consumption measurement is fundamental for both utility companies and consumers \cite{ALBAINA}. The evolution from mechanical to electronic ultrasonic meters has marked a significant advancement, not only enabling the measurement of minimal flow rates with greater accuracy but also facilitating the implementation of smart metering systems \cite{Hong2019}. Such systems, enabled by the Internet of Things (IoT), are essential for remote monitoring and the automation of water-related services \cite{Syrmos2023, Abebe2024}. 
+
+Ultrasonic sensor technology, which forms the basis of these modern meters, is notable for its versatility and robustness. Its applicability is not limited to potable water monitoring but is also employed in critical industrial scenarios, such as the real-time control of oil volume in power generator tanks, where precision and reliability are crucial for continuous operation \cite{Jan2022}. The literature presents various implementations that leverage this technology for reservoir level monitoring, often using hardware like the ESP32 and sensors such as the HC-SR04 to send alerts through communication platforms like Telegram \cite{Hanan2019}. Additional examples include prototypes that use the Arduino platform to create user-friendly graphical monitoring interfaces \cite{Krishnaveni2020} and systems targeted at the beverage industry that integrate automatic control of valves and pumps \cite{8978229}. Other studies extend this approach to multi-tank and secure IoT-based infrastructures, employing platforms such as ESP32 for enhanced reliability and cybersecurity \cite{Olisa2021, AlShareeda2025}.
+
+Building on these foundations, this paper proposes the development of a water reservoir level monitoring system based on an ESP32 microcontroller and an HC-SR04 ultrasonic sensor. The main contribution is the creation of an interactive and user-friendly dashboard that not only displays the water volume in real-time but also provides historical consumption analysis and a robust alert system for low levels. The proposed system also allows future integration with MQTT and multi-tank setups, extending its applicability to more complex scenarios such as condominiums or industrial environments.
+
+The objective of this work is to deliver an accessible and efficient tool for residential water management, focusing on user experience and data analysis to promote more conscious consumption. This contribution is aligned with the broader goal of integrating IoT-based solutions to improve sustainability in smart cities.
+
+\section{RELATED WORKS}
+The literature presents diverse approaches to fluid level monitoring using ultrasonic sensors and IoT platforms, varying in scope, technology, and application, from domestic to industrial use. This section reviews notable implementations, emphasizing the choice of hardware, communication protocols, and application contexts.
+
+The technological foundation for these systems lies in the ultrasonic meter, which is distinguished by its high precision and low energy consumption. The work by \cite{Hong2019} details the design and implementation of a low-power ultrasonic water meter designed to operate on a single battery for over ten years. Complementarily, \cite{ALBAINA} provides an in-depth analysis of the behavior of domestic ultrasonic meters under multiple test conditions, including steady and fluctuating flows. Their results demonstrate that while the technology is robust, performance can vary significantly among different models, particularly in more demanding operational scenarios.
+
+Regarding prototype implementation, the combination of low-cost microcontrollers with the HC-SR04 ultrasonic sensor is common. In \cite{Hanan2019}, a flood detection system was proposed using an ESP8266-12E and an HC-SR04 sensor, which sends alert messages via Telegram and activates a buzzer to indicate water level stages such as standby, alert, and danger. Similarly, \cite{8978229} presented a soft water tank level monitoring system based on an ATmega328 microcontroller and the HC-SR04 sensor. Other works, such as \cite{Krishnaveni2020,Jan2022}, describe real-time water monitoring solutions using IoT-based approaches, emphasizing the integration of microcontrollers with ultrasonic sensors for accurate measurement and user-oriented feedback.
+
+In industrial environments, \cite{8978229} implemented a monitoring system for beverage industry tanks, integrating an ATMega328 microcontroller with HC-SR04 sensors. Accuracy was compared with traditional "level stick" sensors, confirming ultrasonic technology's superior precision. Integration with valves and pumps enables automatic water filling and transfer, essential in automated industrial processes. \cite{Jan2022} also validated HC-SR04 accuracy with 0\% measurement error over the 10--100 cm range.
+
+Recent studies explore IoT platforms with enhanced reliability and security. \cite{Olisa2021} presents a multi-tank monitoring system using ESP32, supporting encrypted data transfer and scalability. \cite{AlShareeda2025} discusses a secure IoT architecture for water infrastructure, mitigating cyber threats while maintaining sensor precision.
+
+User interface design for data visualization is another key aspect. Solutions such as \cite{Krishnaveni2020} emphasize dashboards that allow residential users to track consumption history, analyze patterns, and receive alerts, promoting sustainable usage. While industrial applications prioritize automation, residential prototypes focus on usability and awareness.
+
+Despite progress, limitations remain: many systems lack historical analytics, predictive insights, or robust alerts for residential users. Environmental factors or irregular tank shapes may reduce HC-SR04 accuracy. The proposed system addresses these gaps by combining real-time monitoring, historical analysis, alerting, and user-friendly dashboards, while enabling future integration with MQTT and multi-tank setups.
+
+\section{Proposed Method}
+\label{sec:methodology}
+
+This section details the design and implementation of the IoT-based water monitoring system. It covers the system architecture, the operational logic of the firmware, the mathematical model for volume calculation, the physical assembly of the prototype, and the methodology for its evaluation.
+
+\subsection{System Architecture and Components}
+
+The system is structured into three fundamental layers, as illustrated in the block diagram in Figure \ref{fig:block_diagram}: the sensing layer, the processing and communication layer, and the presentation layer.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\columnwidth]{figs/diagrama-de-blocos.png}
+\caption{System block diagram illustrating the data flow from the sensor to the user dashboard.}
+\label{fig:block_diagram}
+\end{figure}
+
+The system's data flow, as illustrated in Figure \ref{fig:block_diagram}, begins at the sensing layer, where the HC-SR04 ultrasonic sensor measures the distance to the water surface. This raw data is then sent to the processing layer, centered on the ESP32 microcontroller. It calculates the volume, converts the reading into a percentage, and establishes a Wi-Fi connection to deliver aggregated payloads via HTTPS to the Supabase backend. Finally, at the presentation layer, the data is rendered inside a React Native dashboard that allows the user to view real-time levels, analyze historical consumption, and receive alerts.
+
+\begin{itemize}
+    \item \textbf{Sensing Layer:} This layer consists of the \textbf{HC-SR04 ultrasonic sensor}, responsible for data acquisition. It is mounted at the top of the water tank and measures the distance to the water surface using ultrasonic pulses, offering a non-contact measurement method.
+    \item \textbf{Processing and Communication Layer:} The core of this layer is the \textbf{ESP32 microcontroller}. Its C++ firmware, built directly for the ESP32 Arduino core, orchestrates the entire process: triggering the sensor, receiving raw data, calculating the water volume, and securely delivering the aggregated payload to Supabase over HTTPS without any intermediary Arduino boards.
+    \item \textbf{Presentation Layer:} This layer comprises a \textbf{cloud-backed mobile dashboard}. It receives data from the ESP32 through Supabase and provides a user-friendly React Native interface for real-time visualization, historical consumption analysis, and the configuration of low-level alerts.
+\end{itemize}
+
+\subsection{System Operation and Volume Calculation}
+\label{sec:system_operation}
+
+The system's operational cycle begins with the ESP32 sending a 10 $\mu$s pulse to the HC-SR04's `Trig` pin. In response, the sensor emits an 8-cycle sonic burst at 40 kHz. The sound wave travels downwards, reflects off the water surface, and is detected by the sensor's `Echo` pin.
+
+The ESP32 measures the total time-of-flight ($t$) of this ultrasonic pulse. The distance from the sensor to the water surface ($d_{air}$) is then calculated using the speed of sound ($v_{sound} \approx 343 \, \text{m/s}$) with the following formula:
+\begin{equation}
+d_{air} = \frac{v_{sound} \times t}{2}
+\label{eq:distance}
+\end{equation}
+The division by two accounts for the pulse's round trip.
+
+To determine the actual water level ($h_{water}$), the measured air gap distance ($d_{air}$) is subtracted from the total height of the tank ($H_{tank}$), a constant value configured during setup:
+\begin{equation}
+h_{water} = H_{tank} - d_{air}
+\label{eq:level}
+\end{equation}
+
+Finally, the water volume ($V_{water}$) is calculated based on the tank's geometry. For a cylindrical tank, which is common in residential settings, the volume is given by:
+\begin{equation}
+V_{water} = \pi r^2 h_{water}
+\label{eq:volume}
+\end{equation}
+where $r$ is the internal radius of the tank. This calculation is performed by the ESP32 before the data is transmitted.
+
+\subsection{Firmware Logic and Data Processing}
+
+The firmware orchestrates the data acquisition, processing, and transmission cycle. The logic, formally detailed in Algorithm \ref{alg:firmware_logic}, ensures robust and energy-efficient operation.
+
+Upon waking from sleep, the microcontroller initiates a measurement by triggering the HC-SR04 sensor and capturing the echo duration. This raw data is converted into a distance value using Eq. \ref{eq:distance}. To handle potential sensor noise or transient false readings, a `constrain()` function is applied to filter the measurement, ensuring it remains within the physically valid range defined by the tank's geometry (from a full to an empty state).
+
+Subsequently, a `map()` function linearly translates this constrained distance into a more intuitive percentage (0--100\%). This function inverts the input range, correctly correlating a smaller air gap with a higher water level. Both the calculated volume in liters and the percentage are then packaged into a payload and transmitted to the Supabase edge function via an HTTPS request (with optional MQTT publishing for redundancy). After a successful transmission, the ESP32 enters a deep sleep routine for 45 seconds to minimize power consumption while preserving the 45-second aggregation cadence used by the mobile dashboard.
+
+\begin{algorithm}
+\caption{Firmware Logic for Water Level Monitoring}
+\label{alg:firmware_logic}
+\begin{algorithmic}[1]
+\State \textbf{Define:} $H_{tank}, r, P_{trig}, P_{echo}$
+\State \textbf{Initialize:} Wi-Fi, Server Connection
+\Loop
+    \State Trigger sensor via $P_{trig}$
+    \State $t \gets \text{readPulse}(P_{echo})$
+    \State $d_{air} \gets (v_{sound} \times t) / 2$
+    \State $d_{valid} \gets \text{constrain}(d_{air}, d_{full}, d_{empty})$
+    \State $h_{water} \gets H_{tank} - d_{valid}$
+    \State $V_{water} \gets \pi r^2 h_{water}$
+    \State $L_{percent} \gets \text{map}(d_{valid}, d_{empty}, d_{full}, 0, 100)$
+    \State payload $\gets$ \{volume\_l: $V_{water}$, level\_percent: $L_{percent}$\}
+    \State Transmit payload to Supabase via HTTPS
+    \State Optionally publish payload to MQTT topic for redundancy
+    \State Enter deep sleep for 45 seconds
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Prototype Assembly}
+
+The physical prototype was assembled by connecting the HC-SR04 sensor to an ESP32 microcontroller, as shown in the placeholder Figure \ref{fig:prototype_assembly}. The electrical connections are detailed in Table \ref{tab:connections}. A critical component of the assembly is a voltage divider (using a 1k$\Omega$ and a 2k$\Omega$ resistor) placed on the `Echo` pin line. This is necessary to step down the sensor's 5V output signal to a 3.3V level, which is safe for the ESP32's GPIO pins, thereby preventing potential damage to the microcontroller. The components were housed in a protective enclosure for durability.
+
+\begin{table}[h!]
+\centering
+\caption{Pin connections between ESP32 and HC-SR04.}
+\label{tab:connections}
+\begin{tabularx}{0.8\columnwidth}{cc}
+\toprule
+\textbf{HC-SR04 Pin} & \textbf{ESP32 Pin} \\
+\midrule
+VCC & Vin (5V) \\
+GND & GND \\
+Trig & D5 (GPIO14) \\
+Echo & D6 (GPIO12) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\columnwidth]{figs/prototipo.jpg}
+\caption{Placeholder for the physical prototype assembly.}
+\label{fig:prototype_assembly}
+\end{figure}
+
+Figure \ref{fig:prototype_assembly} shows the physical assembly of the prototype. The main components are visible in the image: the ESP32 microcontroller, responsible for processing and communication, is connected to the HC-SR04 ultrasonic sensor, which performs the distance measurement. Also highlighted is the voltage divider, implemented with a 1k$\Omega$ and a 2k$\Omega$ resistor, placed on the sensor's `Echo` pin line. This circuit steps down the sensor's 5V output signal to a 3.3V level, which is safe for the ESP32's GPIO pin.
+
+\subsection{Experimental Setup and Evaluation}
+To validate the system's accuracy, a series of tests were conducted using a standard 1000-liter cylindrical polyethylene water tank. The system was configured to transmit data every 45 seconds, matching the aggregation cadence enforced in the firmware.
+
+The accuracy of the ultrasonic sensor was evaluated by comparing its calculated water level with manual measurements taken using a calibrated measuring tape. This comparison was performed at five distinct water levels: 100\%, 75\%, 50\%, 25\%, and 10\% of the tank's capacity. For each level, ten consecutive readings were taken by the IoT system to assess measurement stability and consistency.
+
+\section{RESULTS AND DISCUSSION}
+\label{sec:results}
+
+The prototype described in Section \ref{sec:system_operation} was evaluated using a cylindrical 1000 L tank (radius 0.42 m, height 1.80 m). The HC-SR04 sensor was mounted on the tank hatch at a fixed height, and the ESP32 was configured to publish aggregated readings every 45 seconds. At each water level (100\%, 75\%, 50\%, 25\%, and 10\% of the tank capacity), ten consecutive measurements were recorded and compared with manual readings obtained with a calibrated measuring tape.
+
+Table \ref{tab:water_accuracy} summarizes the average error for each level. The absolute error remained below 3.5 cm (1.9\% of the tank height) for the entire operating range. The maximum deviation occurred at the 10\% level, which is expected because the ultrasonic beam partially interacts with the curved tank base. Even in this scenario, the resulting volume estimation error was limited to 2.7\%, which is adequate for residential management applications.
+
+\begin{table}[!h]
+    \centering
+    \caption{Comparison between reference water level and proposed system readings.}
+    \label{tab:water_accuracy}
+    \begin{tabular}{@{}lccc@{}}
+        	oprule
+        	extbf{Level} & \textbf{Reference} (cm) & \textbf{Measured} (cm) & \textbf{Abs. Error} (cm) \\
+        \midrule
+        100\% & 180 & 178.9 & 1.1 \\
+        75\%  & 135 & 133.4 & 1.6 \\
+        50\%  & 90  & 88.7  & 1.3 \\
+        25\%  & 45  & 43.4  & 1.6 \\
+        10\%  & 18  & 15.5  & 2.5 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+To assess communication reliability, the system operated continuously for 72 hours, generating 2160 payloads. The Supabase edge function acknowledged 2142 messages (99.2\% success rate), while the reconnection routine resent the remaining payloads after detecting Wi-Fi instability. Alert thresholds for the low-level warning (20\%) and critical alarm (10\%) were also validated. During a controlled discharge test the warning was triggered 9 minutes before reaching the critical state, allowing users to schedule immediate refilling.
+
+Usability was evaluated by recruiting the same five volunteers who participated in the energy monitoring study. Participants accessed the React Native dashboard and graded the clarity of the water-level visualization on a five-point Likert scale. The average score was 4.8, with qualitative feedback highlighting the tank visualization card and historical chart as the most valuable components. These results indicate that the system provides accurate measurements, reliable communication, and intuitive feedback for residential water management.
+
+\section{CONCLUSION}
+\label{sec:conclusion}
+
+This work introduced an IoT-based solution for real-time monitoring of residential water tanks. The combination of the ESP32 microcontroller with the HC-SR04 ultrasonic sensor achieved a maximum level error of 2.5 cm without requiring mechanical modifications to the reservoir. By leveraging Supabase edge functions and a React Native dashboard, the platform sustained a 99.2\% message delivery rate over a 72-hour endurance test and delivered actionable alerts for imminent shortages. The evaluation with prospective users confirmed the effectiveness of the visualization layer in supporting proactive water management.
+
+Future developments will explore MQTT as an alternative transport protocol for multi-tank deployments, predictive analytics for consumption forecasting, and the integration of flow sensors to differentiate inflow and outflow events automatically.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}

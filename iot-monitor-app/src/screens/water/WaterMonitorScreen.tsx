@@ -5,13 +5,15 @@
 
 import React, { useEffect, useState } from 'react'
 import { View, ScrollView, StyleSheet, Dimensions, RefreshControl } from 'react-native'
-import { Card, Title, Paragraph, ProgressBar, ActivityIndicator } from 'react-native-paper'
+import { ActivityIndicator, Card, Chip, Paragraph, ProgressBar, Title } from 'react-native-paper'
 import { LineChart } from 'react-native-chart-kit'
 import { supabase } from '../../services/supabase'
 import { useRealtime } from '../../hooks/useRealtime'
 import { WaterReading } from '../../types/water.types'
 import { COLORS } from '../../constants/colors'
 import { formatPercent, formatVolume, formatTime } from '../../utils/formatters'
+
+const safeConsole: any = (globalThis as any)?.console
 
 const screenWidth = Dimensions.get('window').width
 
@@ -29,7 +31,7 @@ export default function WaterMonitorScreen() {
     onInsert: (newReading: WaterReading) => {
       setCurrentLevel(newReading.water_level_percent)
       setCurrentVolume(newReading.volume_liters)
-      setReadings(prev => [newReading, ...prev].slice(0, 50))
+      setReadings((prev: WaterReading[]) => [newReading, ...prev].slice(0, 50))
     },
   })
 
@@ -53,7 +55,7 @@ export default function WaterMonitorScreen() {
         setCurrentVolume(data[0].volume_liters)
       }
     } catch (error) {
-      console.error('Erro ao carregar dados de água:', error)
+      safeConsole?.error?.('Erro ao carregar dados de água:', error)
     } finally {
       setLoading(false)
     }
@@ -72,9 +74,9 @@ export default function WaterMonitorScreen() {
   }
 
   const chartData = {
-    labels: readings.slice(0, 10).reverse().map(r => formatTime(r.timestamp)),
+    labels: readings.slice(0, 10).reverse().map((r: WaterReading) => formatTime(r.timestamp)),
     datasets: [{
-      data: readings.slice(0, 10).reverse().map(r => r.water_level_percent),
+      data: readings.slice(0, 10).reverse().map((r: WaterReading) => r.water_level_percent),
     }],
   }
 
@@ -93,6 +95,27 @@ export default function WaterMonitorScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      <Card style={styles.heroCard}>
+        <Card.Content>
+          <View style={styles.heroHeader}>
+            <Paragraph style={styles.heroSubtitle}>Reservatório monitorado</Paragraph>
+            <Chip icon="water" style={styles.heroChip}>Água</Chip>
+          </View>
+          <Title style={styles.heroTitle}>Status em tempo real</Title>
+          <View style={styles.heroRow}>
+            <View style={styles.heroStat}>
+              <Paragraph style={styles.heroLabel}>Nível atual</Paragraph>
+              <Title style={styles.heroValue}>{formatPercent(currentLevel)}</Title>
+            </View>
+            <View style={styles.heroDivider} />
+            <View style={styles.heroStat}>
+              <Paragraph style={styles.heroLabel}>Volume estimado</Paragraph>
+              <Title style={styles.heroValue}>{formatVolume(currentVolume)}</Title>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+
       {/* Visualização do Tanque */}
       <Card style={styles.card}>
         <Card.Content>
@@ -169,6 +192,54 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     elevation: 3,
+  },
+  heroCard: {
+    marginBottom: 16,
+    borderRadius: 18,
+    elevation: 4,
+  },
+  heroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  heroChip: {
+    backgroundColor: COLORS.water,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  heroStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  heroLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  heroValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.water,
+  },
+  heroDivider: {
+    width: 1,
+    height: 48,
+    backgroundColor: COLORS.grayLight,
+    borderRadius: 1,
   },
   cardTitle: {
     fontSize: 18,

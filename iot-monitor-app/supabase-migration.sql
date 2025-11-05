@@ -291,43 +291,50 @@ DECLARE
   v_date DATE;
   v_tariff NUMERIC := 0.75; -- Tarifa padrão em R$/kWh
 BEGIN
-  -- Converter device_id de text para UUID
   v_device_id := NEW.device_id::UUID;
   v_date := NEW.timestamp::DATE;
-  
-  -- Inserir ou atualizar estatísticas do dia
+
+  WITH day_readings AS (
+    SELECT
+      power_watts,
+      timestamp,
+      LEAD(timestamp) OVER (ORDER BY timestamp) AS next_timestamp
+    FROM energy_readings
+    WHERE device_id = NEW.device_id
+      AND timestamp::DATE = v_date
+  ),
+  aggregated AS (
+    SELECT
+      AVG(power_watts) AS avg_power_watts,
+      MAX(power_watts) AS max_power_watts,
+      MIN(power_watts) AS min_power_watts,
+      SUM(power_watts * GREATEST(EXTRACT(EPOCH FROM (COALESCE(next_timestamp, timestamp) - timestamp)), 0) / 3600000.0) AS total_kwh,
+      COUNT(*) AS reading_count
+    FROM day_readings
+  )
   INSERT INTO energy_daily_stats (
-    device_id, 
-    date, 
-    avg_power_watts, 
-    max_power_watts, 
+    device_id,
+    date,
+    avg_power_watts,
+    max_power_watts,
     min_power_watts,
     total_kwh,
     reading_count,
     estimated_cost,
     updated_at
   )
-  SELECT 
+  SELECT
     v_device_id,
     v_date,
-    AVG(power_watts),
-    MAX(power_watts),
-    MIN(power_watts),
-    SUM(power_watts * EXTRACT(EPOCH FROM (
-      LEAD(timestamp) OVER (ORDER BY timestamp) - timestamp
-    )) / 3600000.0), -- kWh = Watts * horas / 1000
-    COUNT(*),
-    calculate_energy_cost(
-      SUM(power_watts * EXTRACT(EPOCH FROM (
-        LEAD(timestamp) OVER (ORDER BY timestamp) - timestamp
-      )) / 3600000.0),
-      v_tariff
-    ),
+    aggregated.avg_power_watts,
+    aggregated.max_power_watts,
+    aggregated.min_power_watts,
+    aggregated.total_kwh,
+    aggregated.reading_count,
+    calculate_energy_cost(aggregated.total_kwh, v_tariff),
     NOW()
-  FROM energy_readings
-  WHERE device_id = NEW.device_id 
-    AND timestamp::DATE = v_date
-  ON CONFLICT (device_id, date) 
+  FROM aggregated
+  ON CONFLICT (device_id, date)
   DO UPDATE SET
     avg_power_watts = EXCLUDED.avg_power_watts,
     max_power_watts = EXCLUDED.max_power_watts,
@@ -336,7 +343,7 @@ BEGIN
     reading_count = EXCLUDED.reading_count,
     estimated_cost = EXCLUDED.estimated_cost,
     updated_at = NOW();
-    
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
