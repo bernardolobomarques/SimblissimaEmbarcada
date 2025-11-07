@@ -18,11 +18,8 @@ import { Device } from '../../types/device.types'
 import EmptyState from '../../components/common/EmptyState'
 
 const screenWidth = Dimensions.get('window').width
-const GRID_GAP = 12
-const availableWidth = screenWidth - 32
-const rawGridWidth = (availableWidth - GRID_GAP) / 2
-const gridCardWidth = Math.round(Math.min(rawGridWidth, 220))
-const chartContentWidth = Math.max(gridCardWidth - 24, 96)
+const chartWidth = Math.min(screenWidth - 48, 420)
+const chartHeight = 170
 
 const safeConsole: any = (globalThis as any)?.console
 
@@ -162,181 +159,158 @@ export default function WaterMonitorScreen() {
   const avgLevelLabel =
     stats && Number.isFinite(stats.avg_level) ? formatPercent(stats.avg_level) : '—'
 
+  const quickFacts = [
+    { label: 'Volume atual', value: formatVolume(currentVolumeLiters) },
+    { label: 'Restante', value: formatVolume(remainingLiters) },
+    { label: 'Capacidade', value: formatVolume(capacityLiters) },
+    { label: 'Esvaziar em', value: estimatedEmptyHoursLabel },
+  ]
+
+  const configFacts = [
+    { label: 'Altura configurada', value: `${formatNumber(tankHeightCm, 0)} cm` },
+    { label: 'Raio interno', value: `${formatNumber(tankRadiusCm, 0)} cm` },
+    { label: 'Offset do sensor', value: `${formatNumber(sensorOffsetCm, 0)} cm` },
+    { label: 'Consumo 24h', value: dailyConsumptionLabel },
+    { label: 'Nível médio', value: avgLevelLabel },
+  ]
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.wrapper}>
-        <View style={styles.content}>
-          <Card style={styles.heroCard}>
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.heroHeader}>
-                <View style={styles.deviceInfo}>
-                  <Paragraph style={styles.heroSubtitle}>Reservatório monitorado</Paragraph>
-                  <Title style={styles.heroTitle}>{selectedDevice?.device_name ?? 'Reservatório'}</Title>
-                  <Paragraph style={styles.heroHint}>Atualizado {lastUpdate}</Paragraph>
-                </View>
-                <Chip
-                  icon="water"
-                  style={styles.heroChip}
-                  textStyle={styles.heroChipText}
-                  compact
-                  onPress={() => navigation.navigate('WaterDeviceConfig' as never)}
-                >
-                  Ajustar tanque
-                </Chip>
+      <View style={styles.page}>
+        <Card style={styles.headerCard}>
+          <Card.Content>
+            <View style={styles.headerRow}>
+              <View style={styles.headerText}>
+                <Paragraph style={styles.headerEyebrow}>Reservatório monitorado</Paragraph>
+                <Title style={styles.headerTitle}>{selectedDevice?.device_name ?? 'Reservatório'}</Title>
+                <Paragraph style={styles.headerMeta}>Atualizado {lastUpdate}</Paragraph>
               </View>
+              <Chip
+                icon="water"
+                compact
+                mode="outlined"
+                style={styles.headerChip}
+                onPress={() => navigation.navigate('WaterDeviceConfig' as never)}
+              >
+                Ajustar tanque
+              </Chip>
+            </View>
 
-              <View style={styles.deviceChipWrap}>
-                {devices.map((device) => {
-                  const isSelected = device.id === selectedDeviceId
-                  return (
-                    <Chip
-                      key={device.id}
-                      icon={isSelected ? 'check' : 'water-outline'}
-                      selected={isSelected}
-                      style={[styles.deviceChip, isSelected && styles.deviceChipSelected]}
-                      textStyle={styles.deviceChipText}
-                      onPress={() => setSelectedDeviceId(device.id)}
-                    >
-                      {device.device_name || 'Reservatório'}
-                    </Chip>
-                  )
-                })}
-              </View>
+            <View style={styles.selectorRow}>
+              {devices.map((device) => {
+                const isSelected = device.id === selectedDeviceId
+                return (
+                  <Chip
+                    key={device.id}
+                    icon={isSelected ? 'check' : 'water-outline'}
+                    selected={isSelected}
+                    style={[styles.selectorChip, isSelected && styles.selectorChipActive]}
+                    textStyle={isSelected ? styles.selectorChipTextActive : styles.selectorChipText}
+                    onPress={() => setSelectedDeviceId(device.id)}
+                  >
+                    {device.device_name || 'Reservatório'}
+                  </Chip>
+                )
+              })}
+            </View>
 
-              <View style={styles.heroStatsRow}>
-                <View style={styles.heroStat}>
-                  <Paragraph style={styles.heroLabel}>Nível atual</Paragraph>
-                  <Title style={[styles.heroValue, { color: levelColor }]}>{formatPercent(levelPercent)}</Title>
+            {usingEnergyFallback && (
+              <Paragraph style={styles.headerNotice}>
+                Usando calibração de energia. Ajuste altura e raio para leituras reais.
+              </Paragraph>
+            )}
+          </Card.Content>
+        </Card>
+
+        <View style={styles.cardRow}>
+          <Card style={styles.statusCard}>
+            <Card.Content>
+              <View style={styles.statusHeader}>
+                <Title style={[styles.statusValue, { color: levelColor }]}>{formatPercent(levelPercent)}</Title>
+                <View>
+                  <Paragraph style={styles.statusLabel}>Nível atual</Paragraph>
+                  <Paragraph style={styles.statusMeta}>Capacidade {formatVolume(capacityLiters)}</Paragraph>
                 </View>
-                <View style={[styles.heroStat, styles.heroStatRight]}>
-                  <Paragraph style={styles.heroLabel}>Volume disponível</Paragraph>
-                  <Title style={styles.heroValue}>{formatVolume(currentVolumeLiters)}</Title>
-                  <Paragraph style={styles.heroHint}>Restante {formatVolume(remainingLiters)}</Paragraph>
-                </View>
               </View>
+              <ProgressBar
+                progress={Math.min(levelPercent / 100, 1)}
+                color={levelColor}
+                style={styles.statusProgress}
+              />
+              <View style={styles.factsRow}>
+                {quickFacts.map((fact) => (
+                  <View key={fact.label} style={styles.factItem}>
+                    <Paragraph style={styles.factLabel}>{fact.label}</Paragraph>
+                    <Title style={styles.factValue}>{fact.value}</Title>
+                  </View>
+                ))}
+              </View>
+            </Card.Content>
+          </Card>
 
-              {usingEnergyFallback && (
-                <Paragraph style={styles.fallbackNotice}>
-                  Usando o dispositivo de energia como base. Ajuste altura e raio para leituras precisas.
+          <Card style={styles.chartCard}>
+            <Card.Content>
+              <View style={styles.chartHeader}>
+                <Title style={styles.sectionTitle}>Histórico recente</Title>
+                <Paragraph style={styles.chartHint}>Últimas leituras (% ao longo do tempo)</Paragraph>
+              </View>
+              {historyPoints.length ? (
+                <LineChart
+                  data={chartData}
+                  width={chartWidth}
+                  height={chartHeight}
+                  withInnerLines={false}
+                  bezier
+                  fromZero
+                  segments={4}
+                  yAxisSuffix="%"
+                  style={styles.chart}
+                  chartConfig={{
+                    backgroundGradientFrom: GRADIENTS.water[0],
+                    backgroundGradientTo: GRADIENTS.water[1],
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.8})`,
+                    style: {
+                      borderRadius: 12,
+                    },
+                    propsForDots: {
+                      r: '3',
+                      strokeWidth: '1',
+                      stroke: COLORS.white,
+                    },
+                  }}
+                />
+              ) : (
+                <Paragraph style={styles.emptyHistory}>
+                  Ainda não há leituras suficientes para exibir um gráfico.
                 </Paragraph>
               )}
             </Card.Content>
           </Card>
+        </View>
 
-          <View style={styles.gridRow}>
-            <Card style={[styles.gridCard, styles.tankCard, { width: gridCardWidth }]}> 
-              <Card.Content style={styles.cardContent}>
-                <Title style={styles.sectionTitle}>Visualização</Title>
-                <View style={styles.tankContainer}>
-                  <View style={styles.tankBody}>
-                    <View
-                      style={[
-                        styles.waterFill,
-                        {
-                          height: `${Math.max(0, Math.min(levelPercent, 100))}%`,
-                          backgroundColor: levelColor,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <View style={styles.tankStats}>
-                    <Title style={[styles.tankLevel, { color: levelColor }]}>{formatPercent(levelPercent)}</Title>
-                    <Paragraph style={styles.tankVolume}>
-                      {formatVolume(currentVolumeLiters)} de {formatVolume(capacityLiters)}
-                    </Paragraph>
-                  </View>
+        <Card style={styles.summaryCard}>
+          <Card.Content>
+            <Title style={styles.sectionTitle}>Configuração e tendências</Title>
+            <View style={styles.summaryGrid}>
+              {configFacts.map((fact) => (
+                <View key={fact.label} style={styles.summaryItem}>
+                  <Paragraph style={styles.summaryLabel}>{fact.label}</Paragraph>
+                  <Title style={styles.summaryValue}>{fact.value}</Title>
                 </View>
-                <ProgressBar
-                  progress={Math.min(levelPercent / 100, 1)}
-                  color={levelColor}
-                  style={styles.progressBar}
-                />
-              </Card.Content>
-            </Card>
+              ))}
+            </View>
+          </Card.Content>
+        </Card>
 
-            <Card style={[styles.gridCard, { width: gridCardWidth }]}> 
-              <Card.Content style={styles.cardContent}>
-                <Title style={styles.sectionTitle}>Histórico recente</Title>
-                {historyPoints.length ? (
-                  <LineChart
-                    data={chartData}
-                    width={chartContentWidth}
-                    height={140}
-                    withInnerLines={false}
-                    bezier
-                    fromZero
-                    segments={4}
-                    yAxisSuffix="%"
-                    style={styles.chart}
-                    chartConfig={{
-                      backgroundGradientFrom: GRADIENTS.water[0],
-                      backgroundGradientTo: GRADIENTS.water[1],
-                      decimalPlaces: 0,
-                      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.8})`,
-                      style: {
-                        borderRadius: 12,
-                      },
-                      propsForDots: {
-                        r: '3',
-                        strokeWidth: '1',
-                        stroke: COLORS.white,
-                      },
-                    }}
-                  />
-                ) : (
-                  <Paragraph style={styles.emptyHistory}>
-                    Ainda não há leituras suficientes para plotar o gráfico.
-                  </Paragraph>
-                )}
-              </Card.Content>
-            </Card>
-          </View>
-
-          <Card style={styles.summaryCard}>
-            <Card.Content style={styles.cardContent}>
-              <Title style={styles.sectionTitle}>Configuração e uso</Title>
-              <View style={styles.summaryGrid}>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Altura configurada</Paragraph>
-                  <Title style={styles.summaryValue}>{formatNumber(tankHeightCm, 0)} cm</Title>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Raio interno</Paragraph>
-                  <Title style={styles.summaryValue}>{formatNumber(tankRadiusCm, 0)} cm</Title>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Offset do sensor</Paragraph>
-                  <Title style={styles.summaryValue}>{formatNumber(sensorOffsetCm, 0)} cm</Title>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Capacidade útil</Paragraph>
-                  <Title style={styles.summaryValue}>{formatVolume(capacityLiters)}</Title>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Consumo 24h</Paragraph>
-                  <Title style={styles.summaryValue}>{dailyConsumptionLabel}</Title>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Nível médio</Paragraph>
-                  <Title style={styles.summaryValue}>{avgLevelLabel}</Title>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Paragraph style={styles.summaryLabel}>Tempo até esvaziar</Paragraph>
-                  <Title style={styles.summaryValue}>{estimatedEmptyHoursLabel}</Title>
-                </View>
-              </View>
+        {error && (
+          <Card style={styles.alertCard}>
+            <Card.Content>
+              <Paragraph style={styles.alertText}>Erro ao carregar leituras: {error}</Paragraph>
             </Card.Content>
           </Card>
-
-          {error && (
-            <Card style={styles.alertCard}>
-              <Card.Content>
-                <Paragraph style={styles.alertText}>Erro ao carregar leituras: {error}</Paragraph>
-              </Card.Content>
-            </Card>
-          )}
-        </View>
+        )}
 
         <Button
           mode="contained"
@@ -357,14 +331,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.backdrop,
   },
-  wrapper: {
+  page: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    justifyContent: 'space-between',
-  },
-  content: {
-    flex: 1,
+    paddingVertical: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -372,177 +342,151 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.backdrop,
   },
-  heroCard: {
+  headerCard: {
     borderRadius: 18,
     backgroundColor: COLORS.backdropMuted,
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  heroHeader: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  deviceInfo: {
+  headerText: {
     flex: 1,
     marginRight: 12,
   },
-  heroSubtitle: {
+  headerEyebrow: {
     color: COLORS.white,
-    opacity: 0.7,
-    fontSize: 13,
-    marginBottom: 2,
+    opacity: 0.65,
+    fontSize: 12,
+    marginBottom: 4,
   },
-  heroTitle: {
+  headerTitle: {
     color: COLORS.white,
     fontSize: 22,
     fontWeight: '700',
   },
-  heroHint: {
+  headerMeta: {
     color: COLORS.white,
     opacity: 0.6,
-    marginTop: 4,
     fontSize: 12,
   },
-  heroChip: {
-    backgroundColor: COLORS.water,
+  headerChip: {
+    borderColor: COLORS.water,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
-  heroChipText: {
-    color: COLORS.white,
-  },
-  deviceChipWrap: {
+  selectorRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 12,
+    marginHorizontal: -4,
   },
-  deviceChip: {
-    marginRight: 8,
+  selectorChip: {
+    marginHorizontal: 4,
     marginBottom: 8,
     backgroundColor: COLORS.backdrop,
   },
-  deviceChipSelected: {
+  selectorChipActive: {
     backgroundColor: COLORS.water,
   },
-  deviceChipText: {
+  selectorChipText: {
+    color: COLORS.white,
+    opacity: 0.7,
+  },
+  selectorChipTextActive: {
     color: COLORS.white,
   },
-  heroStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  heroStat: {
-    flex: 1,
-    marginRight: 12,
-  },
-  heroStatRight: {
-    marginRight: 0,
-  },
-  heroLabel: {
+  headerNotice: {
+    marginTop: 8,
     color: COLORS.white,
     opacity: 0.7,
     fontSize: 12,
-    marginBottom: 4,
   },
-  heroValue: {
-    color: COLORS.white,
-    fontSize: 26,
-    fontWeight: '700',
-  },
-  fallbackNotice: {
-    color: COLORS.white,
-    opacity: 0.7,
-    marginTop: 12,
-    fontSize: 12,
-  },
-  gridRow: {
+  cardRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
     flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  gridCard: {
-    borderRadius: 16,
-    backgroundColor: COLORS.backdropMuted,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  cardContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  tankCard: {
-    marginRight: GRID_GAP,
-  },
-  summaryCard: {
-    borderRadius: 16,
-    backgroundColor: COLORS.backdropMuted,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: COLORS.white,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  tankContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  statusCard: {
+    flex: 1,
+    minWidth: 260,
+    borderRadius: 16,
+    backgroundColor: COLORS.backdropMuted,
+    marginRight: 12,
+    marginBottom: 16,
+  },
+  chartCard: {
+    flex: 1,
+    minWidth: 260,
+    borderRadius: 16,
+    backgroundColor: COLORS.backdropMuted,
+    marginBottom: 16,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  tankBody: {
-    width: 100,
-    height: 130,
-    borderWidth: 3,
-    borderColor: COLORS.white,
-    borderRadius: 16,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    backgroundColor: COLORS.backdrop,
-  },
-  waterFill: {
-    width: '100%',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  tankStats: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  tankLevel: {
-    fontSize: 42,
+  statusValue: {
+    fontSize: 46,
     fontWeight: '700',
     color: COLORS.white,
   },
-  tankVolume: {
+  statusLabel: {
     color: COLORS.white,
     opacity: 0.7,
+    fontSize: 12,
+    textAlign: 'right',
   },
-  progressBar: {
+  statusMeta: {
+    color: COLORS.white,
+    opacity: 0.6,
+    fontSize: 12,
+    textAlign: 'right',
+  },
+  statusProgress: {
+    marginVertical: 12,
     height: 8,
     borderRadius: 8,
     backgroundColor: COLORS.backdrop,
   },
-  summaryGrid: {
+  factsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  summaryItem: {
-    width: '30%',
-    minWidth: 96,
-    marginBottom: 10,
+  factItem: {
+    width: '48%',
+    marginBottom: 12,
   },
-  summaryLabel: {
+  factLabel: {
     color: COLORS.white,
     opacity: 0.6,
     fontSize: 12,
   },
-  summaryValue: {
+  factValue: {
     color: COLORS.white,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     marginTop: 2,
+  },
+  chartHeader: {
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  chartHint: {
+    color: COLORS.white,
+    opacity: 0.6,
+    fontSize: 12,
+    marginTop: 4,
   },
   chart: {
     marginTop: 4,
@@ -552,16 +496,41 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.7,
   },
+  summaryCard: {
+    borderRadius: 16,
+    backgroundColor: COLORS.backdropMuted,
+    marginBottom: 16,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  summaryItem: {
+    width: '48%',
+    marginBottom: 12,
+  },
+  summaryLabel: {
+    color: COLORS.white,
+    opacity: 0.6,
+    fontSize: 12,
+  },
+  summaryValue: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 2,
+  },
   alertCard: {
     borderRadius: 16,
     backgroundColor: COLORS.error,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   alertText: {
     color: COLORS.white,
   },
   refreshButton: {
+    alignSelf: 'stretch',
     borderRadius: 12,
-    marginTop: 4,
   },
 })
