@@ -36,6 +36,10 @@ export const COLORS = {
   // Cores de fundo
   background: '#F5F5F5',
   surface: '#FFFFFF',
+  surfaceMuted: '#F1F4F8',
+  backdrop: '#0E172A',
+  backdropMuted: '#1B2A41',
+  backdropTint: 'rgba(33, 150, 243, 0.15)',
   
   // Cores de texto
   textPrimary: '#212121',
@@ -49,7 +53,7 @@ export const COLORS = {
 
 export const GRADIENTS = {
   energy: ['#FFB84D', '#FFA500'],
-  water: ['#64B5F6', '#2196F3'],
+  water: ['#0F4C75', '#00B7C2'],
   success: ['#66BB6A', '#4CAF50'],
   warning: ['#FFB74D', '#FF9800'],
   error: ['#EF5350', '#F44336'],

@@ -61,6 +61,36 @@ export function calculateCylindricalVolume(
 }
 
 /**
+ * Calcula capacidade total de um cilindro (em litros)
+ */
+export function calculateCylindricalCapacityLiters(
+  radiusCm: number,
+  heightCm: number
+): number {
+  if (radiusCm <= 0 || heightCm <= 0) {
+    return 0
+  }
+
+  const volumeCm3 = Math.PI * radiusCm * radiusCm * heightCm
+  return volumeCm3 / 1000
+}
+
+/**
+ * Calcula volume de água em litros a partir da altura preenchida (cm)
+ */
+export function calculateCylindricalVolumeFromHeight(
+  radiusCm: number,
+  waterHeightCm: number
+): number {
+  if (radiusCm <= 0 || waterHeightCm <= 0) {
+    return 0
+  }
+
+  const volumeCm3 = Math.PI * radiusCm * radiusCm * waterHeightCm
+  return volumeCm3 / 1000
+}
+
+/**
  * Calcula volume em litros baseado em tanque retangular
  * V = comprimento × largura × altura
  */

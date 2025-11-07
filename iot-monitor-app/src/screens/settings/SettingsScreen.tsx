@@ -94,6 +94,14 @@ export default function SettingsScreen() {
           right={() => <List.Icon icon="chevron-right" />}
           onPress={() => navigation.navigate('DeviceConfig' as never)}
         />
+        <Divider />
+        <List.Item
+          title="Reservatório de água"
+          description="Configurar dimensões do tanque"
+          left={() => <List.Icon icon="water" />}
+          right={() => <List.Icon icon="chevron-right" />}
+          onPress={() => navigation.navigate('WaterDeviceConfig' as never)}
+        />
       </List.Section>
 
       <Divider />

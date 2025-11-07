@@ -19,6 +19,10 @@ export interface Device {
   created_at: string
   updated_at?: string
   metadata?: Record<string, any>
+  water_tank_height_cm?: number | null
+  water_tank_radius_cm?: number | null
+  water_sensor_offset_cm?: number | null
+  water_tank_capacity_liters?: number | null
 }
 
 export type AlertSeverity = 'info' | 'warning' | 'critical'

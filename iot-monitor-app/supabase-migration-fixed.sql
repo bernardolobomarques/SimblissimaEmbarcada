@@ -1,9 +1,16 @@
 -- ============================================================================
--- MIGRATION SCRIPT - IoT Monitor System
+-- MIGRATION SCRIPT - IoT Monitor System (FIXED VERSION)
 -- ============================================================================
 -- Este script corrige o schema atual e adiciona funcionalidades necessárias
--- IMPORTANTE: Rodar em ambiente de desenvolvimento primeiro!
+-- VERSÃO CORRIGIDA: Remove views antes de alterar tabelas
 -- ============================================================================
+
+-- ============================================================================
+-- PARTE 0: REMOVER VIEWS QUE PODEM CAUSAR CONFLITO
+-- ============================================================================
+
+DROP VIEW IF EXISTS latest_energy_readings CASCADE;
+DROP VIEW IF EXISTS latest_water_readings CASCADE;
 
 -- ============================================================================
 -- PARTE 1: EXTENSÕES
@@ -596,7 +603,7 @@ $$ LANGUAGE plpgsql;
 -- SELECT cron.schedule('cleanup-old-data', '0 2 * * *', 'SELECT cleanup_old_readings()');
 
 -- ============================================================================
--- PARTE 14: VIEWS ÚTEIS
+-- PARTE 14: RECRIAR VIEWS ÚTEIS
 -- ============================================================================
 
 -- View de últimas leituras por dispositivo

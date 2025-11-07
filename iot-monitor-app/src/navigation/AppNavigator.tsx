@@ -15,33 +15,35 @@ import WaterMonitorScreen from '../screens/water/WaterMonitorScreen'
 import AlertsScreen from '../screens/alerts/AlertsScreen'
 import SettingsScreen from '../screens/settings/SettingsScreen'
 import DeviceConfigScreen from '../screens/settings/DeviceConfigScreen'
+import WaterDeviceConfigScreen from '../screens/settings/WaterDeviceConfigScreen'
 import { Ionicons } from '@expo/vector-icons'
 import { COLORS } from '../constants/colors'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
 
-type TabRoute = {
-  name: 'Home' | 'Energia' | 'Água' | 'Alertas' | 'Configurações'
-}
-
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }: { route: TabRoute }): BottomTabNavigationOptions => ({
-        tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
+      screenOptions={({ route }): BottomTabNavigationOptions => ({
+        tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap
 
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline'
-          } else if (route.name === 'Energia') {
-            iconName = focused ? 'flash' : 'flash-outline'
-          } else if (route.name === 'Água') {
-            iconName = focused ? 'water' : 'water-outline'
-          } else if (route.name === 'Alertas') {
-            iconName = focused ? 'notifications' : 'notifications-outline'
-          } else {
-            iconName = focused ? 'settings' : 'settings-outline'
+          switch (route.name) {
+            case 'Home':
+              iconName = focused ? 'home' : 'home-outline'
+              break
+            case 'Energia':
+              iconName = focused ? 'flash' : 'flash-outline'
+              break
+            case 'Água':
+              iconName = focused ? 'water' : 'water-outline'
+              break
+            case 'Alertas':
+              iconName = focused ? 'notifications' : 'notifications-outline'
+              break
+            default:
+              iconName = focused ? 'settings' : 'settings-outline'
           }
 
           return <Ionicons name={iconName} size={size} color={color} />
@@ -112,6 +114,16 @@ export default function AppNavigator() {
           options={{
             title: 'Configuração de Corrente',
             headerStyle: { backgroundColor: COLORS.primary },
+            headerTintColor: COLORS.white,
+            headerTitleStyle: { fontWeight: 'bold' },
+          }}
+        />
+        <RootStack.Screen
+          name="WaterDeviceConfig"
+          component={WaterDeviceConfigScreen}
+          options={{
+            title: 'Configuração do Reservatório',
+            headerStyle: { backgroundColor: COLORS.water },
             headerTintColor: COLORS.white,
             headerTitleStyle: { fontWeight: 'bold' },
           }}

@@ -12,6 +12,9 @@ export interface WaterReading {
   volume_liters: number // Volume de água em litros
   tank_height_cm: number // Altura total do tanque em centímetros
   tank_capacity_liters: number // Capacidade total do tanque em litros
+  tank_radius_cm?: number // Raio do tanque usado no cálculo (opcional)
+  sensor_offset_cm?: number // Altura do sensor acima da borda da água
+  computed_with_device_profile?: boolean // Se os valores foram recalculados com base nas configurações do dispositivo
 }
 
 export interface WaterStats {
@@ -61,6 +64,14 @@ export interface TankDimensions {
   width_cm?: number
   length_cm?: number
   capacity_liters: number
+}
+
+export interface WaterContainerConfig {
+  height_cm: number
+  radius_cm: number
+  sensor_offset_cm: number
+  capacity_liters: number
+  updated_at?: string
 }
 
 export interface ConsumptionRate {

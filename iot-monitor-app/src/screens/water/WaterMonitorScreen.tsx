@@ -3,281 +3,540 @@
  * Exibe dados em tempo real do nível de água no reservatório
  */
 
-import React, { useEffect, useState } from 'react'
-import { View, ScrollView, StyleSheet, Dimensions, RefreshControl } from 'react-native'
-import { ActivityIndicator, Card, Chip, Paragraph, ProgressBar, Title } from 'react-native-paper'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, ScrollView, StyleSheet, Dimensions, RefreshControl, SafeAreaView } from 'react-native'
+import { ActivityIndicator, Button, Card, Chip, Paragraph, ProgressBar, Title } from 'react-native-paper'
+import { useNavigation } from '@react-navigation/native'
 import { LineChart } from 'react-native-chart-kit'
-import { supabase } from '../../services/supabase'
+import { useAuth } from '../../hooks/useAuth'
+import { useWaterData } from '../../hooks/useWaterData'
 import { useRealtime } from '../../hooks/useRealtime'
-import { WaterReading } from '../../types/water.types'
-import { COLORS } from '../../constants/colors'
-import { formatPercent, formatVolume, formatTime } from '../../utils/formatters'
-
-const safeConsole: any = (globalThis as any)?.console
+import { deviceService } from '../../services/device.service'
+import { COLORS, GRADIENTS } from '../../constants/colors'
+import { formatNumber, formatPercent, formatRelativeTime, formatVolume, formatTime } from '../../utils/formatters'
+import { Device } from '../../types/device.types'
+import EmptyState from '../../components/common/EmptyState'
 
 const screenWidth = Dimensions.get('window').width
 
-export default function WaterMonitorScreen() {
-  const [readings, setReadings] = useState<WaterReading[]>([])
-  const [currentLevel, setCurrentLevel] = useState(0)
-  const [currentVolume, setCurrentVolume] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+const safeConsole: any = (globalThis as any)?.console
 
-  // Subscrever a atualizações em tempo real
+export default function WaterMonitorScreen() {
+  const navigation = useNavigation()
+  const { user } = useAuth()
+  const [devices, setDevices] = useState<Device[]>([])
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
+  const [loadingDevices, setLoadingDevices] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [usingEnergyFallback, setUsingEnergyFallback] = useState(false)
+
+  const {
+    readings,
+    currentReading,
+    containerConfig,
+    stats,
+    loading,
+    error,
+    refresh,
+  } = useWaterData(selectedDeviceId ?? '')
+
+  const selectedDevice = useMemo(
+    () => devices.find((device: Device) => device.id === selectedDeviceId) ?? null,
+    [devices, selectedDeviceId]
+  )
+
+  useEffect(() => {
+    if (!user?.id) {
+      return
+    }
+
+    const loadDevices = async () => {
+      try {
+        setLoadingDevices(true)
+        const { devices: loadedDevices, usedFallback } = await deviceService.getWaterCapableDevices(user.id)
+        setDevices(loadedDevices)
+        setUsingEnergyFallback(usedFallback)
+
+        if (!selectedDeviceId && loadedDevices.length > 0) {
+          setSelectedDeviceId(loadedDevices[0].id)
+        }
+      } catch (loadError) {
+        safeConsole?.error?.('Erro ao carregar dispositivos de água:', loadError)
+      } finally {
+        setLoadingDevices(false)
+      }
+    }
+
+    loadDevices()
+  }, [user?.id])
+
   useRealtime({
     table: 'water_readings',
     event: 'INSERT',
-    onInsert: (newReading: WaterReading) => {
-      setCurrentLevel(newReading.water_level_percent)
-      setCurrentVolume(newReading.volume_liters)
-      setReadings((prev: WaterReading[]) => [newReading, ...prev].slice(0, 50))
+    filter: selectedDeviceId ? `device_id=eq.${selectedDeviceId}` : undefined,
+    onInsert: () => {
+      refresh()
     },
   })
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-
-      const { data } = await supabase
-        .from('water_readings')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(50)
-      
-      if (data && data.length > 0) {
-        setReadings(data)
-        setCurrentLevel(data[0].water_level_percent)
-        setCurrentVolume(data[0].volume_liters)
-      }
-    } catch (error) {
-      safeConsole?.error?.('Erro ao carregar dados de água:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const onRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    await loadData()
+    await refresh()
     setRefreshing(false)
-  }
+  }, [refresh])
 
-  const getLevelColor = () => {
-    if (currentLevel < 10) return COLORS.critical
-    if (currentLevel < 20) return COLORS.warning
-    return COLORS.success
-  }
+  const isLoading = loadingDevices || (loading && !currentReading)
 
-  const chartData = {
-    labels: readings.slice(0, 10).reverse().map((r: WaterReading) => formatTime(r.timestamp)),
-    datasets: [{
-      data: readings.slice(0, 10).reverse().map((r: WaterReading) => r.water_level_percent),
-    }],
-  }
-
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.water} />
+        <ActivityIndicator size="large" color={COLORS.waterLight} />
       </View>
     )
   }
 
+  if (!devices.length) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <EmptyState
+          icon="💧"
+          title="Nenhum reservatório configurado"
+          message="Cadastre um dispositivo de água e personalize as dimensões do reservatório para ver as leituras."
+          actionLabel="Configurar reservatório"
+          onAction={() => navigation.navigate('WaterDeviceConfig' as never)}
+        />
+      </SafeAreaView>
+    )
+  }
+
+  const levelPercent = currentReading?.water_level_percent ?? 0
+  const currentVolumeLiters = currentReading?.volume_liters ?? 0
+  const capacityLiters = currentReading?.tank_capacity_liters ?? containerConfig?.capacity_liters ?? 0
+  const remainingLiters = Math.max(0, capacityLiters - currentVolumeLiters)
+  const lastUpdate = currentReading ? formatRelativeTime(currentReading.timestamp) : '—'
+  const levelColor = levelPercent < 10 ? COLORS.critical : levelPercent < 25 ? COLORS.warning : COLORS.success
+  const historyPoints = readings.slice(0, 12).reverse()
+
+  const chartData = {
+    labels: historyPoints.map((reading) => formatTime(reading.timestamp)),
+    datasets: [
+      {
+        data: historyPoints.map((reading) => reading.water_level_percent),
+        color: () => COLORS.waterLight,
+        strokeWidth: 2,
+      },
+    ],
+    legend: ['Nível (%)'],
+  }
+
+  const estimatedEmptyHoursLabel = stats
+    ? Number.isFinite(stats.estimated_empty_hours)
+      ? `${stats.estimated_empty_hours.toFixed(1)} h`
+      : 'Indeterminado'
+    : '—'
+
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Card style={styles.heroCard}>
-        <Card.Content>
-          <View style={styles.heroHeader}>
-            <Paragraph style={styles.heroSubtitle}>Reservatório monitorado</Paragraph>
-            <Chip icon="water" style={styles.heroChip}>Água</Chip>
-          </View>
-          <Title style={styles.heroTitle}>Status em tempo real</Title>
-          <View style={styles.heroRow}>
-            <View style={styles.heroStat}>
-              <Paragraph style={styles.heroLabel}>Nível atual</Paragraph>
-              <Title style={styles.heroValue}>{formatPercent(currentLevel)}</Title>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.white} />}>
+        <Card style={styles.heroCard}>
+          <Card.Content>
+            <View style={styles.heroHeader}>
+              <View style={styles.deviceInfo}>
+                <Paragraph style={styles.heroSubtitle}>Reservatório monitorado</Paragraph>
+                <Title style={styles.heroTitle}>{selectedDevice?.device_name ?? 'Reservatório'}</Title>
+              </View>
+              <Chip
+                icon="water"
+                style={styles.heroChip}
+                textStyle={styles.heroChipText}
+                onPress={() => navigation.navigate('WaterDeviceConfig' as never)}
+              >
+                Ajustar tanque
+              </Chip>
             </View>
-            <View style={styles.heroDivider} />
-            <View style={styles.heroStat}>
-              <Paragraph style={styles.heroLabel}>Volume estimado</Paragraph>
-              <Title style={styles.heroValue}>{formatVolume(currentVolume)}</Title>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
 
-      {/* Visualização do Tanque */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={styles.cardTitle}>Nível do Reservatório</Title>
-          <View style={styles.tankContainer}>
-            <View style={styles.tank}>
-              <View
-                style={[
-                  styles.water,
-                  {
-                    height: `${currentLevel}%`,
-                    backgroundColor: getLevelColor(),
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.deviceChips}>
+              {devices.map((device) => {
+                const isSelected = device.id === selectedDeviceId
+                return (
+                  <Chip
+                    key={device.id}
+                    icon={isSelected ? 'check' : 'water-outline'}
+                    selected={isSelected}
+                    style={[styles.deviceChip, isSelected && styles.deviceChipSelected]}
+                    textStyle={styles.deviceChipText}
+                    onPress={() => setSelectedDeviceId(device.id)}
+                  >
+                    {device.device_name || 'Reservatório'}
+                  </Chip>
+                )
+              })}
+            </ScrollView>
+
+            <View style={styles.heroStatsRow}>
+              <View style={styles.heroStat}>
+                <Paragraph style={styles.heroLabel}>Nível atual</Paragraph>
+                <Title style={[styles.heroValue, { color: levelColor }]}>{formatPercent(levelPercent)}</Title>
+                <Paragraph style={styles.heroHint}>Atualizado {lastUpdate}</Paragraph>
+              </View>
+              <View style={styles.heroDivider} />
+              <View style={styles.heroStat}>
+                <Paragraph style={styles.heroLabel}>Volume disponível</Paragraph>
+                <Title style={styles.heroValue}>{formatVolume(currentVolumeLiters)}</Title>
+                <Paragraph style={styles.heroHint}>Restante: {formatVolume(remainingLiters)}</Paragraph>
+              </View>
+            </View>
+
+            {usingEnergyFallback && (
+              <Paragraph style={styles.fallbackNotice}>
+                Usando o mesmo dispositivo monitorado em energia. Configure a altura e o raio para habilitar cálculos precisos.
+              </Paragraph>
+            )}
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.profileCard}>
+          <Card.Content>
+            <Title style={styles.sectionTitle}>Perfil do reservatório</Title>
+            {containerConfig ? (
+              <View style={styles.profileGrid}>
+                <View style={styles.profileItem}>
+                  <Paragraph style={styles.profileLabel}>Altura configurada</Paragraph>
+                  <Title style={styles.profileValue}>{formatNumber(containerConfig.height_cm, 0)} cm</Title>
+                </View>
+                <View style={styles.profileItem}>
+                  <Paragraph style={styles.profileLabel}>Raio</Paragraph>
+                  <Title style={styles.profileValue}>{formatNumber(containerConfig.radius_cm, 0)} cm</Title>
+                </View>
+                <View style={styles.profileItem}>
+                  <Paragraph style={styles.profileLabel}>Sensor</Paragraph>
+                  <Title style={styles.profileValue}>{formatNumber(containerConfig.sensor_offset_cm, 0)} cm</Title>
+                </View>
+                <View style={styles.profileItem}>
+                  <Paragraph style={styles.profileLabel}>Capacidade total</Paragraph>
+                  <Title style={styles.profileValue}>{formatVolume(containerConfig.capacity_liters)}</Title>
+                </View>
+              </View>
+            ) : (
+              <View>
+                <Paragraph style={styles.profileFallback}>
+                  Configure a altura e o raio do reservatório para leituras mais precisas.
+                </Paragraph>
+                <Button
+                  mode="contained"
+                  onPress={() => navigation.navigate('WaterDeviceConfig' as never)}
+                  style={styles.profileButton}
+                >
+                  Ajustar dimensões
+                </Button>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title style={styles.sectionTitle}>Visualização do tanque</Title>
+            <View style={styles.tankContainer}>
+              <View style={styles.tankBody}>
+                <View
+                  style={[styles.waterFill, {
+                    height: `${Math.max(0, Math.min(levelPercent, 100))}%`,
+                    backgroundColor: levelColor,
+                  }]}
+                />
+              </View>
+              <View style={styles.tankStats}>
+                <Title style={[styles.tankLevel, { color: levelColor }]}>{formatPercent(levelPercent)}</Title>
+                <Paragraph style={styles.tankVolume}>{formatVolume(currentVolumeLiters)} de {formatVolume(capacityLiters)}</Paragraph>
+              </View>
+            </View>
+            <ProgressBar progress={Math.min(levelPercent / 100, 1)} color={levelColor} style={styles.progressBar} />
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title style={styles.sectionTitle}>Histórico recente</Title>
+            {historyPoints.length ? (
+              <LineChart
+                data={chartData}
+                width={screenWidth - 48}
+                height={220}
+                withInnerLines={false}
+                bezier
+                chartConfig={{
+                  backgroundGradientFrom: GRADIENTS.water[0],
+                  backgroundGradientTo: GRADIENTS.water[1],
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.8})`,
+                  style: {
+                    borderRadius: 12,
                   },
-                ]}
+                  propsForDots: {
+                    r: '3',
+                    strokeWidth: '1',
+                    stroke: COLORS.white,
+                  },
+                }}
+                style={styles.chart}
               />
-            </View>
-            <Title style={[styles.levelText, { color: getLevelColor() }]}>
-              {formatPercent(currentLevel)}
-            </Title>
-          </View>
-          <ProgressBar
-            progress={currentLevel / 100}
-            color={getLevelColor()}
-            style={styles.progressBar}
-          />
-          <Paragraph style={styles.volumeText}>
-            Volume: {formatVolume(currentVolume)}
-          </Paragraph>
-        </Card.Content>
-      </Card>
+            ) : (
+              <Paragraph style={styles.emptyHistory}>Ainda não há leituras suficientes para plotar o gráfico.</Paragraph>
+            )}
+          </Card.Content>
+        </Card>
 
-      {/* Gráfico de Histórico */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={styles.cardTitle}>Variação do Nível</Title>
-          {readings.length > 0 && (
-            <LineChart
-              data={chartData}
-              width={screenWidth - 60}
-              height={220}
-              chartConfig={{
-                backgroundColor: COLORS.water,
-                backgroundGradientFrom: COLORS.waterLight,
-                backgroundGradientTo: COLORS.water,
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                style: {
-                  borderRadius: 16,
-                },
-              }}
-              bezier
-              style={styles.chart}
-            />
-          )}
-        </Card.Content>
-      </Card>
-    </ScrollView>
+        {error && (
+          <Card style={styles.alertCard}>
+            <Card.Content>
+              <Paragraph style={styles.alertText}>Erro ao carregar leituras: {error}</Paragraph>
+              <Button mode="text" onPress={handleRefresh} textColor={COLORS.white}>
+                Tentar novamente
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
+
+        {stats && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Title style={styles.sectionTitle}>Resumo diário</Title>
+              <View style={styles.statsGrid}>
+                <View style={styles.statsItem}>
+                  <Paragraph style={styles.profileLabel}>Consumo nas últimas horas</Paragraph>
+                  <Title style={styles.profileValue}>{formatVolume(stats.daily_consumption)}</Title>
+                </View>
+                <View style={styles.statsItem}>
+                  <Paragraph style={styles.profileLabel}>Volume médio</Paragraph>
+                  <Title style={styles.profileValue}>{formatPercent(stats.avg_level)}</Title>
+                </View>
+                <View style={styles.statsItem}>
+                  <Paragraph style={styles.profileLabel}>Tempo estimado até esvaziar</Paragraph>
+                  <Title style={styles.profileValue}>{estimatedEmptyHoursLabel}</Title>
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.backdrop,
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: 16,
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  card: {
-    marginBottom: 16,
-    elevation: 3,
+    backgroundColor: COLORS.backdrop,
   },
   heroCard: {
-    marginBottom: 16,
     borderRadius: 18,
-    elevation: 4,
+    padding: 4,
+    backgroundColor: COLORS.backdropMuted,
+    marginBottom: 16,
   },
   heroHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  deviceInfo: {
+    flex: 1,
+    marginRight: 12,
   },
   heroSubtitle: {
+    color: COLORS.white,
+    opacity: 0.7,
     fontSize: 14,
-    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  heroTitle: {
+    color: COLORS.white,
+    fontSize: 22,
+    fontWeight: '700',
   },
   heroChip: {
     backgroundColor: COLORS.water,
   },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 12,
+  heroChipText: {
+    color: COLORS.white,
   },
-  heroRow: {
+  deviceChips: {
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  deviceChip: {
+    marginRight: 8,
+    backgroundColor: COLORS.backdrop,
+  },
+  deviceChipSelected: {
+    backgroundColor: COLORS.water,
+  },
+  deviceChipText: {
+    color: COLORS.white,
+  },
+  heroStatsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'stretch',
+    marginTop: 16,
   },
   heroStat: {
     flex: 1,
-    alignItems: 'center',
+    paddingRight: 8,
   },
   heroLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    color: COLORS.white,
+    opacity: 0.7,
+    fontSize: 13,
+    marginBottom: 4,
   },
   heroValue: {
-    fontSize: 24,
+    color: COLORS.white,
+    fontSize: 28,
     fontWeight: '700',
-    color: COLORS.water,
+  },
+  heroHint: {
+    color: COLORS.white,
+    opacity: 0.6,
+    marginTop: 4,
   },
   heroDivider: {
     width: 1,
-    height: 48,
-    backgroundColor: COLORS.grayLight,
-    borderRadius: 1,
+    backgroundColor: COLORS.backdropTint,
+    marginHorizontal: 12,
   },
-  cardTitle: {
+  profileCard: {
+    borderRadius: 16,
+    padding: 4,
+    backgroundColor: COLORS.backdropMuted,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    color: COLORS.white,
     fontSize: 18,
-    marginBottom: 10,
+    marginBottom: 16,
+  },
+  profileGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -8,
+  },
+  profileItem: {
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  profileLabel: {
+    color: COLORS.white,
+    opacity: 0.6,
+    fontSize: 12,
+  },
+  profileValue: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  profileFallback: {
+    color: COLORS.white,
+    opacity: 0.7,
+    marginBottom: 12,
+  },
+  profileButton: {
+    alignSelf: 'flex-start',
+  },
+  card: {
+    borderRadius: 16,
+    backgroundColor: COLORS.backdropMuted,
+    marginBottom: 16,
+    padding: 4,
   },
   tankContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  tank: {
-    width: 120,
-    height: 200,
+  tankBody: {
+    width: 140,
+    height: 220,
     borderWidth: 3,
-    borderColor: '#333',
-    borderRadius: 10,
+    borderColor: COLORS.white,
+    borderRadius: 18,
     overflow: 'hidden',
     justifyContent: 'flex-end',
-    backgroundColor: COLORS.grayLight,
+    backgroundColor: COLORS.backdrop,
   },
-  water: {
+  waterFill: {
     width: '100%',
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
   },
-  levelText: {
+  tankStats: {
+    flex: 1,
+    marginLeft: 24,
+  },
+  tankLevel: {
     fontSize: 48,
-    fontWeight: 'bold',
-    marginTop: 10,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  tankVolume: {
+    color: COLORS.white,
+    opacity: 0.7,
   },
   progressBar: {
-    height: 10,
-    borderRadius: 5,
-    marginVertical: 10,
-  },
-  volumeText: {
-    fontSize: 16,
-    textAlign: 'center',
+    height: 12,
+    borderRadius: 8,
+    backgroundColor: COLORS.backdrop,
   },
   chart: {
-    marginVertical: 8,
+    marginTop: 8,
+    borderRadius: 12,
+  },
+  emptyHistory: {
+    color: COLORS.white,
+    opacity: 0.7,
+  },
+  alertCard: {
     borderRadius: 16,
+    backgroundColor: COLORS.error,
+  },
+  alertText: {
+    color: COLORS.white,
+    marginBottom: 8,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -8,
+  },
+  statsItem: {
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  fallbackNotice: {
+    color: COLORS.white,
+    opacity: 0.7,
+    marginTop: 16,
   },
 })

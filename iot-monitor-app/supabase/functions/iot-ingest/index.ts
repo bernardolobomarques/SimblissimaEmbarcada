@@ -3,15 +3,12 @@
  * 
  * Recebe dados de sensores IoT (ESP32), valida e armazena no banco.
  * 
- * Deploy:
- * supabase functions deploy iot-ingest
- * 
- * Test:
- * curl -i --location --request POST 'https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/iot-ingest' \
- *   --header 'Authorization: Bearer iot_xxxxx' \
- *   --header 'X-Device-Type: energy' \
- *   --header 'Content-Type: application/json' \
- *   --data '{"device_id":"uuid","timestamp":"2025-10-26T14:00:00-03:00","readings":{"current_rms":5.2,"voltage":127,"power_watts":660,"sample_count":300}}'
+ * Deploy Manual via Dashboard:
+ * 1. Acesse: https://supabase.com/dashboard/project/ybnobvonfxoqvlimfzpl/functions
+ * 2. Clique em "Create a new function"
+ * 3. Nome: iot-ingest
+ * 4. Cole este código
+ * 5. Deploy
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'

@@ -4,7 +4,8 @@
  */
 
 import { supabase } from './supabase'
-import { WaterReading, WaterStats, ConsumptionRate } from '../types/water.types'
+import { WaterReading, WaterStats, ConsumptionRate, WaterContainerConfig } from '../types/water.types'
+import { calculateWaterLevel, calculateCylindricalCapacityLiters, calculateCylindricalVolumeFromHeight } from '../utils/calculations'
 
 export const waterService = {
   /**
@@ -24,6 +25,38 @@ export const waterService = {
     }
     
     return data || []
+  },
+
+  async getContainerConfig(deviceId: string): Promise<WaterContainerConfig | null> {
+    const { data, error } = await supabase
+      .from('devices')
+      .select('water_tank_height_cm, water_tank_radius_cm, water_sensor_offset_cm, water_tank_capacity_liters, updated_at')
+      .eq('id', deviceId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Erro ao carregar configuração do reservatório:', error)
+      return null
+    }
+
+    if (!data || data.water_tank_height_cm == null || data.water_tank_radius_cm == null) {
+      return null
+    }
+
+    const height = Number(data.water_tank_height_cm)
+    const radius = Number(data.water_tank_radius_cm)
+    const sensorOffset = Number(data.water_sensor_offset_cm ?? 0)
+    const capacity = Number(
+      data.water_tank_capacity_liters ?? calculateCylindricalCapacityLiters(radius, height)
+    )
+
+    return {
+      height_cm: height,
+      radius_cm: radius,
+      sensor_offset_cm: sensorOffset,
+      capacity_liters: capacity,
+      updated_at: data.updated_at,
+    }
   },
 
   /**
@@ -163,5 +196,26 @@ export const waterService = {
     }
 
     return data
+  },
+
+  applyContainerConfig(reading: WaterReading, config: WaterContainerConfig): WaterReading {
+    const effectiveHeight = config.height_cm
+    const sensorOffset = config.sensor_offset_cm
+
+    const levelPercent = calculateWaterLevel(reading.distance_cm, effectiveHeight, sensorOffset)
+    const waterHeight = Math.max(0, effectiveHeight - sensorOffset - reading.distance_cm)
+    const recalculatedVolume = calculateCylindricalVolumeFromHeight(config.radius_cm, waterHeight)
+    const capacity = calculateCylindricalCapacityLiters(config.radius_cm, effectiveHeight)
+
+    return {
+      ...reading,
+      water_level_percent: levelPercent,
+      volume_liters: recalculatedVolume,
+      tank_height_cm: effectiveHeight,
+      tank_capacity_liters: capacity,
+      tank_radius_cm: config.radius_cm,
+      sensor_offset_cm: sensorOffset,
+      computed_with_device_profile: true,
+    }
   },
 }
