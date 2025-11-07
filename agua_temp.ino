@@ -25,7 +25,7 @@ const char* WIFI_PASSWORD = "01112006";
 const unsigned long WIFI_CONNECT_TIMEOUT_MS = 30000;
 
 // Supabase
-const char* SUPABASE_URL = "https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/supabase-edge-function-iot-ingest-ts";
+const char* SUPABASE_URL = "https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/iot-ingest";
 const char* DEVICE_ID = "4b6d07de-007e-4bf5-a1f6-a3fdd08abf0e";
 const char* API_KEY = "iot_XzSw0pRPQolvrXu2St3t-dnxY-wJYhhn";
 

@@ -16,12 +16,12 @@
 // ============================================================================
 
 // WiFi
-const char* WIFI_SSID = "POCO X5 5G";
-const char* WIFI_PASSWORD = "vascodagama";
+const char* WIFI_SSID = "Lobo";
+const char* WIFI_PASSWORD = "01112006";
 const unsigned long WIFI_CONNECT_TIMEOUT_MS = 30000;
 
 // Supabase
-const char* SUPABASE_URL = "https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/supabase-edge-function-iot-ingest-ts";
+const char* SUPABASE_URL = "https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/iot-ingest";
 const char* DEVICE_ID = "4b6d07de-007e-4bf5-a1f6-a3fdd08abf0e";
 const char* API_KEY = "iot_XzSw0pRPQolvrXu2St3t-dnxY-wJYhhn";
 
@@ -270,7 +270,7 @@ void sendReading(float current, float voltage, float power, int sampleCount) {
 
   http.setTimeout(15000);
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("x-api-key", API_KEY);
+  http.addHeader("Authorization", String("Bearer ") + API_KEY);
   http.addHeader("X-Device-Type", "energy");
 
   StaticJsonDocument<384> doc;
