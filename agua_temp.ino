@@ -1,6 +1,6 @@
 /**
  * ESP32 - Sensor de Água (HC-SR04 Ultrassônico)
- * Envia leituras agregadas para Supabase a cada 45 segundos
+ * Versão 2025-11-06: leitura com interpolação calibrada e envio estendido
  */
 
 #include <WiFi.h>
@@ -9,14 +9,19 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
+#include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // ============================================================================
 // CONFIGURAÇÕES - ALTERE AQUI
 // ============================================================================
 
 // WiFi
-const char* WIFI_SSID = "POCO X5 5G";
-const char* WIFI_PASSWORD = "vascodagama";
+const char* WIFI_SSID = "Lobo";
+const char* WIFI_PASSWORD = "01112006";
 const unsigned long WIFI_CONNECT_TIMEOUT_MS = 30000;
 
 // Supabase
@@ -25,17 +30,25 @@ const char* DEVICE_ID = "4b6d07de-007e-4bf5-a1f6-a3fdd08abf0e";
 const char* API_KEY = "iot_XzSw0pRPQolvrXu2St3t-dnxY-wJYhhn";
 
 // Sensor HC-SR04
-const int TRIG_PIN = 5;  // GPIO5
-const int ECHO_PIN = 18; // GPIO18
+const int TRIG_PIN = 5;   // GPIO5
+const int ECHO_PIN = 18;  // GPIO18
+const float SPEED_OF_SOUND_CM_PER_US = 0.0343f;
 
-// Configurações do Tanque
-const float TANK_HEIGHT_CM = 200.0;
-const float TANK_CAPACITY_LITERS = 1000.0;
-const float SENSOR_OFFSET_CM = 5.0;
+// Geometria do tanque (cilíndrico)
+const float TANK_HEIGHT_CM = 10.0f;
+const float TANK_DIAMETER_CM = 12.5f;
+const float TANK_RADIUS_CM = TANK_DIAMETER_CM / 2.0f;
+const float SENSOR_OFFSET_CM = 1.27f;  // sensor a 11.27 cm do fundo (offset = sensor_height - TANK_HEIGHT)
+const float TANK_CAPACITY_ML = 1400.0f;  // volume aferido em testes
+const float TANK_CAPACITY_LITERS = TANK_CAPACITY_ML / 1000.0f;
+const float NOMINAL_BASE_AREA_CM2 = (float)(M_PI * TANK_RADIUS_CM * TANK_RADIUS_CM);
+const float EFFECTIVE_BASE_AREA_CM2 = TANK_CAPACITY_ML / TANK_HEIGHT_CM;
+const float VOLUME_CORRECTION_FACTOR = EFFECTIVE_BASE_AREA_CM2 / NOMINAL_BASE_AREA_CM2;
 
 // Agregação das leituras
-const int SAMPLES_PER_READING = 45;  // ~45s totais para agregação
-const int SAMPLE_INTERVAL_MS = 1000; // 1 segundo entre leituras
+const int SAMPLES_PER_READING = 45;   // ~45 s totais
+const int SAMPLE_INTERVAL_MS = 1000;  // 1 Hz
+const float MAX_VALID_DISTANCE_CM = TANK_HEIGHT_CM + 5.0f;  // filtro simples para outliers (distância corrigida)
 
 // ============================================================================
 // OBJETOS GLOBAIS
@@ -51,8 +64,13 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", -3 * 3600, 60000);
 bool ensureWiFiConnected();
 bool connectWiFi();
 float measureDistance();
+float computeWaterHeightCm(float distanceCm);
+float computeVolumeMlFromHeight(float waterHeightCm);
+float computeLevelPercent(float waterHeightCm);
+float clampValue(float value, float minValue, float maxValue);
+float roundToDecimals(float value, uint8_t decimals);
 String getISOTimestamp();
-void sendReading(float distance, float levelPercent, float volumeLiters, int sampleCount);
+void sendReading(float distanceCmCorrected, float distanceCmRaw, float waterHeightCm, float levelPercent, float volumeLiters, float volumeMl, int validSamples);
 
 // ============================================================================
 // SETUP
@@ -96,10 +114,12 @@ void setup() {
   }
 
   Serial.println();
-  Serial.println("Configurações do tanque:");
-  Serial.printf("  Altura: %.1f cm\n", TANK_HEIGHT_CM);
-  Serial.printf("  Capacidade: %.1f L\n", TANK_CAPACITY_LITERS);
-  Serial.printf("  Offset do sensor: %.1f cm\n", SENSOR_OFFSET_CM);
+  Serial.println("Configurações do tanque cilíndrico:");
+  Serial.printf("  Altura: %.2f cm\n", TANK_HEIGHT_CM);
+  Serial.printf("  Raio: %.2f cm (diâmetro %.2f cm)\n", TANK_RADIUS_CM, TANK_DIAMETER_CM);
+  Serial.printf("  Capacidade útil (medida): %.1f mL (%.3f L)\n", TANK_CAPACITY_ML, TANK_CAPACITY_LITERS);
+  Serial.printf("  Fator de correção: %.4f\n", VOLUME_CORRECTION_FACTOR);
+  Serial.printf("  Offset do sensor (altura da flange): %.2f cm\n", SENSOR_OFFSET_CM);
   Serial.println();
 }
 
@@ -120,45 +140,48 @@ void loop() {
   Serial.printf("Coletando %d amostras agregadas...\n", SAMPLES_PER_READING);
   Serial.println("========================================");
 
-  float totalDistance = 0;
+  float totalDistanceCorrected = 0.0f;
+  float totalDistanceRaw = 0.0f;
   int validSamples = 0;
 
   for (int i = 0; i < SAMPLES_PER_READING; i++) {
-    float distance = measureDistance();
+    float rawDistance = measureDistance();
+    float correctedDistance = clampValue(rawDistance - SENSOR_OFFSET_CM, 0.0f, 1000.0f);
 
-    if (distance > 0 && distance < 400) {
-      totalDistance += distance;
+    if (correctedDistance > 0 && correctedDistance < MAX_VALID_DISTANCE_CM) {
+      totalDistanceCorrected += correctedDistance;
+      totalDistanceRaw += rawDistance;
       validSamples++;
     }
 
     if ((i + 1) % 30 == 0) {
-      Serial.printf("  [%d/%d] Progresso: %.1f%%\n", i + 1, SAMPLES_PER_READING, ((i + 1) * 100.0) / SAMPLES_PER_READING);
+      Serial.printf("  [%d/%d] Progresso: %.1f%%\n", i + 1, SAMPLES_PER_READING, ((i + 1) * 100.0f) / SAMPLES_PER_READING);
     }
 
     delay(SAMPLE_INTERVAL_MS);
   }
 
   if (validSamples > 0) {
-    float avgDistance = totalDistance / validSamples;
-    float waterHeight = TANK_HEIGHT_CM - avgDistance - SENSOR_OFFSET_CM;
-
-    if (waterHeight < 0) waterHeight = 0;
-    if (waterHeight > TANK_HEIGHT_CM) waterHeight = TANK_HEIGHT_CM;
-
-    float levelPercent = (waterHeight / TANK_HEIGHT_CM) * 100.0;
-    float volumeLiters = (levelPercent / 100.0) * TANK_CAPACITY_LITERS;
+    float avgDistanceCorrected = totalDistanceCorrected / validSamples;
+    float avgDistanceRaw = totalDistanceRaw / validSamples;
+    float waterHeightCm = computeWaterHeightCm(avgDistanceCorrected);
+    float clampedWaterHeight = clampValue(waterHeightCm, 0.0f, TANK_HEIGHT_CM);
+    float volumeMl = computeVolumeMlFromHeight(clampedWaterHeight);
+    float levelPercent = computeLevelPercent(clampedWaterHeight);
+    float volumeLiters = volumeMl / 1000.0f;
 
     Serial.println("\n========================================");
     Serial.println("RESULTADO DA AGREGAÇÃO:");
     Serial.println("========================================");
     Serial.printf("  Amostras válidas: %d/%d\n", validSamples, SAMPLES_PER_READING);
-    Serial.printf("  Distância média: %.2f cm\n", avgDistance);
-    Serial.printf("  Altura da água: %.2f cm\n", waterHeight);
+    Serial.printf("  Distância média (corrigida): %.2f cm\n", avgDistanceCorrected);
+    Serial.printf("  Distância média (bruta): %.2f cm\n", avgDistanceRaw);
+  Serial.printf("  Altura média da água: %.2f cm\n", clampedWaterHeight);
+  Serial.printf("  Volume estimado: %.1f mL (%.3f L)\n", volumeMl, volumeLiters);
     Serial.printf("  Nível: %.1f%%\n", levelPercent);
-    Serial.printf("  Volume: %.1f L\n", volumeLiters);
     Serial.println("========================================\n");
 
-    sendReading(avgDistance, levelPercent, volumeLiters, validSamples);
+    sendReading(avgDistanceCorrected, avgDistanceRaw, clampedWaterHeight, levelPercent, volumeLiters, volumeMl, validSamples);
   } else {
     Serial.println("ERRO: Nenhuma amostra válida coletada!");
   }
@@ -210,20 +233,58 @@ float measureDistance() {
   long duration = pulseIn(ECHO_PIN, HIGH, 30000);
 
   if (duration == 0) {
-    return -1;
+    return -1.0f;
   }
 
-  float distance = (duration * 0.0343) / 2.0;
+  float distance = (duration * SPEED_OF_SOUND_CM_PER_US) / 2.0f;
   return distance;
+}
+
+float computeWaterHeightCm(float distanceCm) {
+  float waterHeight = TANK_HEIGHT_CM - distanceCm;
+  return clampValue(waterHeight, 0.0f, TANK_HEIGHT_CM);
+}
+
+float computeVolumeMlFromHeight(float waterHeightCm) {
+  float volume = NOMINAL_BASE_AREA_CM2 * waterHeightCm * VOLUME_CORRECTION_FACTOR;
+  return clampValue(volume, 0.0f, TANK_CAPACITY_ML);
+}
+
+float computeLevelPercent(float waterHeightCm) {
+  float percent = (waterHeightCm / TANK_HEIGHT_CM) * 100.0f;
+  return clampValue(percent, 0.0f, 100.0f);
+}
+
+float clampValue(float value, float minValue, float maxValue) {
+  if (value < minValue) {
+    return minValue;
+  }
+  if (value > maxValue) {
+    return maxValue;
+  }
+  return value;
+}
+
+float roundToDecimals(float value, uint8_t decimals) {
+  float factor = 1.0f;
+  for (uint8_t i = 0; i < decimals; i++) {
+    factor *= 10.0f;
+  }
+
+  if (value >= 0.0f) {
+    return (long)(value * factor + 0.5f) / factor;
+  }
+
+  return (long)(value * factor - 0.5f) / factor;
 }
 
 String getISOTimestamp() {
   timeClient.update();
   unsigned long epochTime = timeClient.getEpochTime();
 
-  if (epochTime < 1577836800) {
+  if (epochTime < 1577836800UL) {
     Serial.println("Aviso: Timestamp NTP parece incorreto, usando fallback");
-    epochTime = 1698700000 + (millis() / 1000);
+    epochTime = 1698700000UL + (millis() / 1000UL);
   }
 
   time_t rawTime = static_cast<time_t>(epochTime);
@@ -241,7 +302,7 @@ String getISOTimestamp() {
   return String(buffer);
 }
 
-void sendReading(float distance, float levelPercent, float volumeLiters, int sampleCount) {
+void sendReading(float distanceCmCorrected, float distanceCmRaw, float waterHeightCm, float levelPercent, float volumeLiters, float volumeMl, int validSamples) {
   Serial.println("----------------------------------------");
   Serial.println("ENVIANDO PARA SUPABASE");
   Serial.println("----------------------------------------");
@@ -262,21 +323,40 @@ void sendReading(float distance, float levelPercent, float volumeLiters, int sam
 
   http.setTimeout(15000);
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("x-api-key", API_KEY);
+  http.addHeader("Authorization", String("Bearer ") + API_KEY);
   http.addHeader("X-Device-Type", "water");
 
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<768> doc;
   doc["device_id"] = DEVICE_ID;
   doc["timestamp"] = getISOTimestamp();
 
   JsonObject readings = doc.createNestedObject("readings");
-  readings["distance_cm"] = round(distance * 10) / 10.0;
-  readings["water_level_percent"] = round(levelPercent * 10) / 10.0;
-  readings["volume_liters"] = round(volumeLiters * 10) / 10.0;
-  readings["tank_height_cm"] = TANK_HEIGHT_CM;
-  readings["tank_capacity_liters"] = TANK_CAPACITY_LITERS;
-  readings["sample_count"] = sampleCount;
-  readings["aggregation_window_seconds"] = SAMPLES_PER_READING * (SAMPLE_INTERVAL_MS / 1000.0);
+  readings["distance_cm"] = roundToDecimals(distanceCmCorrected, 2);
+  readings["water_height_cm"] = roundToDecimals(waterHeightCm, 2);
+  readings["water_level_percent"] = roundToDecimals(levelPercent, 1);
+  readings["volume_liters"] = roundToDecimals(volumeLiters, 3);
+  readings["tank_height_cm"] = roundToDecimals(TANK_HEIGHT_CM, 2);
+  readings["tank_capacity_liters"] = roundToDecimals(TANK_CAPACITY_LITERS, 3);
+  readings["sensor_offset_cm"] = roundToDecimals(SENSOR_OFFSET_CM, 2);
+  readings["sample_count"] = validSamples;
+  readings["aggregation_window_seconds"] = roundToDecimals(SAMPLES_PER_READING * (SAMPLE_INTERVAL_MS / 1000.0f), 1);
+
+  JsonObject metadata = doc.createNestedObject("metadata");
+  metadata["firmware_version"] = "1.2.0-cylinder";
+  metadata["rssi"] = WiFi.RSSI();
+  metadata["uptime_seconds"] = millis() / 1000;
+  metadata["tank_radius_cm"] = TANK_RADIUS_CM;
+  metadata["tank_diameter_cm"] = TANK_DIAMETER_CM;
+  metadata["tank_height_cm"] = TANK_HEIGHT_CM;
+  metadata["tank_capacity_ml"] = TANK_CAPACITY_ML;
+  metadata["volume_correction_factor"] = VOLUME_CORRECTION_FACTOR;
+  metadata["calibration_points"] = 2;
+  metadata["calibration_last_update"] = "2025-11-06";
+  metadata["interpolation"] = "cylinder";
+  metadata["volume_ml"] = roundToDecimals(volumeMl, 1);
+  metadata["samples_requested"] = SAMPLES_PER_READING;
+  metadata["valid_samples"] = validSamples;
+  metadata["distance_raw_cm"] = roundToDecimals(distanceCmRaw, 2);
 
   String payload;
   serializeJson(doc, payload);

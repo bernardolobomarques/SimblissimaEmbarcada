@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react'
-import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native'
-import { ActivityIndicator, Badge, Button, Card, Chip, Paragraph, Title } from 'react-native-paper'
+import { View, StyleSheet } from 'react-native'
+import { ActivityIndicator, Badge, Button, Card, Chip, Paragraph, Title, Divider } from 'react-native-paper'
 import { useNavigation } from '@react-navigation/native'
 import { supabase } from '../../services/supabase'
 import { useAuth } from '../../hooks/useAuth'
@@ -109,46 +109,42 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Title style={styles.header}>Dashboard IoT</Title>
-      <Paragraph style={styles.welcome}>
-        Bem-vindo, {user?.email?.split('@')[0]}!
-      </Paragraph>
+    <View style={styles.container}>
+      <View>
+        <Title style={styles.header}>Dashboard IoT</Title>
+        <Paragraph style={styles.welcome}>Bem-vindo, {user?.email?.split('@')[0]}!</Paragraph>
 
         {demoConfig && (
           <Card style={styles.demoCard}>
             <Card.Content>
               <View style={styles.demoHeader}>
-                <Paragraph style={styles.demoSubtitle}>Corrente demonstrativa</Paragraph>
+                <View>
+                  <Paragraph style={styles.demoSubtitle}>Corrente demonstrativa</Paragraph>
+                  <Title style={styles.demoTitle}>{demoConfig.label}</Title>
+                </View>
                 <Chip icon="flash" style={styles.demoChip}>Energia</Chip>
               </View>
-              <Title style={styles.demoTitle}>{demoConfig.label}</Title>
               <View style={styles.demoRow}>
                 <View style={styles.demoStat}>
-                  <Paragraph style={styles.demoLabel}>Corrente</Paragraph>
-                  <Title style={styles.demoValue}>{demoConfig.nominalCurrent.toFixed(1)} A</Title>
+                  <Paragraph style={styles.demoLabel}>Nominal</Paragraph>
+                  <Paragraph style={styles.demoValue}>{demoConfig.nominalCurrent.toFixed(1)} A</Paragraph>
                 </View>
-                <View style={styles.demoDivider} />
+                <Divider style={styles.demoDivider} />
                 <View style={styles.demoStat}>
                   <Paragraph style={styles.demoLabel}>Limite</Paragraph>
-                  <Title style={styles.demoValue}>{demoConfig.maxCurrent.toFixed(1)} A</Title>
+                  <Paragraph style={styles.demoValue}>{demoConfig.maxCurrent.toFixed(1)} A</Paragraph>
                 </View>
-                <View style={styles.demoDivider} />
+                <Divider style={styles.demoDivider} />
                 <View style={styles.demoStat}>
                   <Paragraph style={styles.demoLabel}>Tensão</Paragraph>
-                  <Title style={styles.demoValue}>{demoConfig.voltage.toFixed(0)} V</Title>
+                  <Paragraph style={styles.demoValue}>{demoConfig.voltage.toFixed(0)} V</Paragraph>
                 </View>
               </View>
               <Button
+                compact
                 icon="tune"
                 mode="outlined"
                 onPress={() => navigation.navigate('DeviceConfig' as never)}
-                style={styles.demoButton}
               >
                 Ajustar apresentação
               </Button>
@@ -156,65 +152,65 @@ export default function HomeScreen() {
           </Card>
         )}
 
-      {/* Card Energia */}
-      <Card
-        style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.secondary }]}
-        onPress={() => navigation.navigate('Energia' as never)}
-      >
-        <Card.Content>
-          <View style={styles.cardHeader}>
-            <Title style={styles.cardTitle}>⚡ Energia</Title>
-            <Badge style={styles.badge}>
-              {`${devicesOnline.energy} online`}
-            </Badge>
-          </View>
-          <Paragraph style={[styles.powerValue, { color: COLORS.secondary }]}>
-            {formatPower(energyPower)}
-          </Paragraph>
-          <Paragraph style={styles.label}>Potência atual</Paragraph>
-        </Card.Content>
-      </Card>
-
-      {/* Card Água */}
-      <Card
-        style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.water }]}
-        onPress={() => navigation.navigate('Água' as never)}
-      >
-        <Card.Content>
-          <View style={styles.cardHeader}>
-            <Title style={styles.cardTitle}>💧 Água</Title>
-            <Badge style={styles.badge}>
-              {`${devicesOnline.water} online`}
-            </Badge>
-          </View>
-          <Paragraph style={[styles.powerValue, { color: COLORS.water }]}>
-            {formatPercent(waterLevel)}
-          </Paragraph>
-          <Paragraph style={styles.label}>Nível do reservatório</Paragraph>
-        </Card.Content>
-      </Card>
-
-      {/* Card de Status Geral */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={styles.cardTitle}>📊 Status Geral</Title>
-          <View style={styles.statusRow}>
-            <View style={styles.statusItem}>
-              <Paragraph style={styles.statusValue}>
-                {devicesOnline.energy + devicesOnline.water}
+        <View style={styles.metricsRow}>
+          <Card
+            style={[styles.metricCard, styles.metricCardLeft, { borderTopColor: COLORS.secondary }]}
+            onPress={() => navigation.navigate('Energia' as never)}
+          >
+            <Card.Content>
+              <View style={styles.cardHeader}>
+                <Paragraph style={styles.metricTitle}>⚡ Energia</Paragraph>
+                <Badge style={styles.badge}>{`${devicesOnline.energy} online`}</Badge>
+              </View>
+              <Paragraph style={[styles.metricValue, { color: COLORS.secondary }]}>
+                {formatPower(energyPower)}
               </Paragraph>
-              <Paragraph style={styles.statusLabel}>Dispositivos Online</Paragraph>
-            </View>
-            <View style={styles.statusItem}>
-              <Paragraph style={styles.statusValue}>
-                2
+              <Paragraph style={styles.metricLabel}>Potência atual</Paragraph>
+            </Card.Content>
+          </Card>
+
+          <Card
+            style={[styles.metricCard, { borderTopColor: COLORS.water }]}
+            onPress={() => navigation.navigate('Água' as never)}
+          >
+            <Card.Content>
+              <View style={styles.cardHeader}>
+                <Paragraph style={styles.metricTitle}>💧 Água</Paragraph>
+                <Badge style={styles.badge}>{`${devicesOnline.water} online`}</Badge>
+              </View>
+              <Paragraph style={[styles.metricValue, { color: COLORS.water }]}>
+                {formatPercent(waterLevel)}
               </Paragraph>
-              <Paragraph style={styles.statusLabel}>Sistemas Ativos</Paragraph>
+              <Paragraph style={styles.metricLabel}>Nível do reservatório</Paragraph>
+            </Card.Content>
+          </Card>
+        </View>
+
+        <Card style={styles.summaryCard}>
+          <Card.Content style={styles.summaryContent}>
+            <View style={styles.summaryItem}>
+              <Paragraph style={styles.summaryLabel}>Dispositivos online</Paragraph>
+              <Paragraph style={styles.summaryValue}>{devicesOnline.energy + devicesOnline.water}</Paragraph>
             </View>
-          </View>
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            <Divider style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Paragraph style={styles.summaryLabel}>Sistemas ativos</Paragraph>
+              <Paragraph style={styles.summaryValue}>2</Paragraph>
+            </View>
+          </Card.Content>
+        </Card>
+      </View>
+
+      <Button
+        mode="contained"
+        style={styles.refreshButton}
+        icon="refresh"
+        loading={refreshing}
+        onPress={onRefresh}
+      >
+        Atualizar dados
+      </Button>
+    </View>
   )
 }
 
@@ -222,7 +218,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    justifyContent: 'space-between',
   },
   loadingContainer: {
     flex: 1,
@@ -231,24 +229,19 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 22,
+    marginBottom: 4,
     color: COLORS.textPrimary,
   },
   welcome: {
-    fontSize: 16,
-    marginBottom: 20,
+    fontSize: 14,
+    marginBottom: 12,
     color: COLORS.textSecondary,
   },
-  card: {
-    marginBottom: 16,
-    elevation: 3,
-    backgroundColor: COLORS.white,
-  },
   demoCard: {
-    marginBottom: 20,
-    borderRadius: 18,
-    elevation: 4,
+    marginBottom: 12,
+    borderRadius: 14,
+    elevation: 2,
   },
   demoHeader: {
     flexDirection: 'row',
@@ -257,82 +250,110 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   demoSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.textSecondary,
   },
   demoChip: {
     backgroundColor: COLORS.secondary,
   },
   demoTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: COLORS.textPrimary,
-    marginBottom: 12,
+    marginTop: 2,
   },
   demoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   demoStat: {
     flex: 1,
     alignItems: 'center',
   },
   demoLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
   },
   demoValue: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.secondary,
   },
   demoDivider: {
+    height: 40,
     width: 1,
-    height: 48,
     backgroundColor: COLORS.grayLight,
-    borderRadius: 1,
-  },
-  demoButton: {
-    alignSelf: 'flex-end',
-    marginTop: 4,
+    marginHorizontal: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 18,
+    marginBottom: 6,
   },
   badge: {
     backgroundColor: COLORS.success,
   },
-  powerValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-  },
-  label: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  statusRow: {
+  metricsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  statusItem: {
-    alignItems: 'center',
+  metricCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderTopWidth: 4,
+    elevation: 2,
+    backgroundColor: COLORS.white,
   },
-  statusValue: {
-    fontSize: 32,
+  metricCardLeft: {
+    marginRight: 12,
+  },
+  metricTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  metricValue: {
+    fontSize: 26,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
-  statusLabel: {
+  metricLabel: {
     fontSize: 12,
     color: COLORS.textSecondary,
+  },
+  summaryCard: {
+    borderRadius: 14,
+    elevation: 2,
+    backgroundColor: COLORS.white,
+  },
+  summaryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+  },
+  summaryItem: {
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  summaryDivider: {
+    height: 32,
+    width: 1,
+    backgroundColor: COLORS.grayLight,
+  },
+  refreshButton: {
+    marginTop: 8,
+    borderRadius: 12,
   },
 })

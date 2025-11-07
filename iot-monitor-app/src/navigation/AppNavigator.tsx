@@ -7,6 +7,7 @@ import React from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator, type BottomTabNavigationOptions } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { Platform } from 'react-native'
 import { useAuth } from '../hooks/useAuth'
 import AuthNavigator from './AuthNavigator'
 import HomeScreen from '../screens/home/HomeScreen'
@@ -16,6 +17,7 @@ import AlertsScreen from '../screens/alerts/AlertsScreen'
 import SettingsScreen from '../screens/settings/SettingsScreen'
 import DeviceConfigScreen from '../screens/settings/DeviceConfigScreen'
 import WaterDeviceConfigScreen from '../screens/settings/WaterDeviceConfigScreen'
+import SummaryWebScreen from '../screens/web/SummaryWebScreen'
 import { Ionicons } from '@expo/vector-icons'
 import { COLORS } from '../constants/colors'
 
@@ -38,6 +40,9 @@ function MainTabs() {
               break
             case 'Água':
               iconName = focused ? 'water' : 'water-outline'
+              break
+            case 'Resumo':
+              iconName = focused ? 'stats-chart' : 'stats-chart-outline'
               break
             case 'Alertas':
               iconName = focused ? 'notifications' : 'notifications-outline'
@@ -64,6 +69,13 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{ title: 'Dashboard' }}
+      />
+      <Tab.Screen
+        name="Resumo"
+        component={SummaryWebScreen}
+        options={{
+          title: Platform.OS === 'web' ? 'Resumo (Web)' : 'Resumo',
+        }}
       />
       <Tab.Screen
         name="Energia"

@@ -143,12 +143,40 @@ export default function EnergyMonitorScreen() {
     name: device.device_name || 'Dispositivo',
   }))
 
-  // Preparar dados para o gráfico (últimas 10 leituras)
+  const historyReadings = readings.slice(0, 12).reverse()
+  const maxPowerCapacity = demoMaxCurrent > 0 && demoVoltage > 0 ? demoMaxCurrent * demoVoltage : 0
+  const historyPercents = historyReadings.map((reading: EnergyReading) => {
+    if (maxPowerCapacity <= 0) {
+      return 0
+    }
+    const ratio = (reading.power_watts / maxPowerCapacity) * 100
+    if (ratio < 0) return 0
+    if (ratio > 100) return 100
+    return ratio
+  })
+
   const chartData = {
-    labels: readings.slice(0, 10).reverse().map((r: EnergyReading) => formatTime(r.timestamp)),
-    datasets: [{
-      data: readings.slice(0, 10).reverse().map((r: EnergyReading) => r.power_watts),
-    }],
+    labels: historyReadings.map((reading: EnergyReading) => formatTime(reading.timestamp)),
+    datasets: [
+      {
+        data: historyPercents,
+        color: () => COLORS.secondaryLight,
+        strokeWidth: 2,
+      },
+      {
+        data: historyPercents.length ? Array(historyPercents.length).fill(0) : [0],
+        withDots: false,
+        color: () => 'rgba(0,0,0,0)',
+        strokeWidth: 0,
+      },
+      {
+        data: historyPercents.length ? Array(historyPercents.length).fill(100) : [100],
+        withDots: false,
+        color: () => 'rgba(0,0,0,0)',
+        strokeWidth: 0,
+      },
+    ],
+    legend: ['Utilização do limite (%)'],
   }
 
   if (isLoadingDevices) {
@@ -298,12 +326,15 @@ export default function EnergyMonitorScreen() {
       {/* Gráfico de Leituras */}
       <Card style={styles.card}>
         <Card.Content>
-          <Title style={styles.cardTitle}>Últimas 10 Leituras</Title>
-          {readings.length > 0 && (
+          <Title style={styles.cardTitle}>Últimas leituras (% do limite)</Title>
+          {historyReadings.length > 0 && (
             <LineChart
               data={chartData}
               width={screenWidth - 60}
               height={220}
+              fromZero
+              segments={4}
+              yAxisSuffix="%"
               chartConfig={{
                 backgroundColor: COLORS.secondary,
                 backgroundGradientFrom: COLORS.secondaryLight,
