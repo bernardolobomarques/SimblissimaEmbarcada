@@ -8,7 +8,6 @@ Repositório do grupo simblissima para as disciplinas de Sistemas Embarcados #IB
 - **ESP32**
 - Sensor De Corrente 30a **Acs712**
 - **Tomadas 10A**
-- **Dijuntor 20A**
 
 ### App
 
