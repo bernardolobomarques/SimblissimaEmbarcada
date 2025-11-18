@@ -16,21 +16,21 @@
 // ============================================================================
 
 // WiFi
-const char* WIFI_SSID = "Lobo";
-const char* WIFI_PASSWORD = "01112006";
+const char *WIFI_SSID = "POCO X5 5G";
+const char *WIFI_PASSWORD = "vascodagama";
 const unsigned long WIFI_CONNECT_TIMEOUT_MS = 30000;
 
 // Supabase
-const char* SUPABASE_URL = "https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/iot-ingest";
-const char* DEVICE_ID = "4b6d07de-007e-4bf5-a1f6-a3fdd08abf0e";
-const char* API_KEY = "iot_XzSw0pRPQolvrXu2St3t-dnxY-wJYhhn";
+const char *SUPABASE_URL = "https://ybnobvonfxoqvlimfzpl.supabase.co/functions/v1/supabase-edge-function-iot-ingest-ts";
+const char *DEVICE_ID = "4b6d07de-007e-4bf5-a1f6-a3fdd08abf0e";
+const char *API_KEY = "iot_XzSw0pRPQolvrXu2St3t-dnxY-wJYhhn";
 
 // Sensor ACS712 calibrado (modelo 30A)
-const int SENSOR_PIN = 34;      // GPIO34 (ADC1_CH6)
+const int SENSOR_PIN = 34; // GPIO34 (ADC1_CH6)
 const float VOLTAGE_NOMINAL = 127.0;
 const float ADC_VREF = 3.3;
 const int ADC_RESOLUTION = 4096;
-const int ACS_OFFSET = 2947;
+int ACS_OFFSET = 2947; // Será recalibrado no setup com WiFi ligado
 const float ACS_SENSITIVITY = 0.0814;
 const float CURRENT_DEAD_ZONE = 0.15;
 const uint16_t RMS_WINDOW_MS = 500;
@@ -61,7 +61,8 @@ void sendReading(float current, float voltage, float power, int sampleCount);
 // SETUP
 // ============================================================================
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   delay(1000);
 
@@ -76,7 +77,8 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
 
-  if (!connectWiFi()) {
+  if (!connectWiFi())
+  {
     Serial.println("WiFi indisponível. Retentando em 10 segundos.");
     delay(10000);
   }
@@ -86,15 +88,19 @@ void setup() {
 
   Serial.print("Sincronizando horário");
   int ntpAttempts = 0;
-  while (!timeClient.update() && ntpAttempts < 10) {
+  while (!timeClient.update() && ntpAttempts < 10)
+  {
     delay(1000);
     Serial.print(".");
     ntpAttempts++;
   }
 
-  if (ntpAttempts < 10) {
+  if (ntpAttempts < 10)
+  {
     Serial.printf(" OK (%s)\n", timeClient.getFormattedTime().c_str());
-  } else {
+  }
+  else
+  {
     Serial.println(" FALHOU");
     Serial.println("Aviso: NTP não sincronizado, timestamps podem estar incorretos");
   }
@@ -105,14 +111,56 @@ void setup() {
   Serial.printf("  Sensibilidade: %.4f V/A\n", ACS_SENSITIVITY);
   Serial.printf("  Vref: %.2f V\n", ADC_VREF);
   Serial.println();
+
+  // Recalibrar offset com WiFi ligado (WiFi interfere no ADC)
+  Serial.println("========================================");
+  Serial.println("CALIBRAÇÃO DO SENSOR ACS712");
+  Serial.println("========================================");
+  Serial.println("IMPORTANTE: Certifique-se de que:");
+  Serial.println("  - A tomada está ENERGIZADA (127V)");
+  Serial.println("  - NÃO há NADA PLUGADO na tomada");
+  Serial.println("  - Corrente deve ser 0A");
+  Serial.println();
+  Serial.println("Aguardando 3 segundos...");
+  delay(3000);
+  delay(3000);
+
+  Serial.println("Calibrando...");
+  long sumOffset = 0;
+  int offsetSamples = 0;
+  unsigned long startMillis = millis();
+
+  while (millis() - startMillis < 3000)
+  { // 3 segundos de calibração
+    sumOffset += analogRead(SENSOR_PIN);
+    offsetSamples++;
+    delay(10);
+  }
+
+  int newOffset = sumOffset / offsetSamples;
+  Serial.println();
+  Serial.println("Resultado da calibração:");
+  Serial.printf("  Offset original: %d\n", ACS_OFFSET);
+  Serial.printf("  Offset recalibrado: %d (baseado em %d amostras)\n", newOffset, offsetSamples);
+  Serial.printf("  Diferença: %d ADC\n", newOffset - ACS_OFFSET);
+
+  // Atualiza o offset
+  ACS_OFFSET = newOffset;
+
+  Serial.println();
+  Serial.println("✓ Calibração concluída com sucesso!");
+  Serial.println("========================================");
+  Serial.println();
 }
 
 // ============================================================================
 // LOOP PRINCIPAL
 // ============================================================================
 
-void loop() {
-  if (!ensureWiFiConnected()) {
+void loop()
+{
+  if (!ensureWiFiConnected())
+  {
     Serial.println("WiFi indisponível. Tentando novamente em 5 segundos...");
     delay(5000);
     return;
@@ -127,22 +175,29 @@ void loop() {
   float totalCurrent = 0;
   int validSamples = 0;
 
-  for (int i = 0; i < SAMPLES_PER_READING; i++) {
+  for (int i = 0; i < SAMPLES_PER_READING; i++)
+  {
     float current = readCurrentRMS();
 
-    if (current >= 0 && current < 50) {
+    if (current >= 0 && current < 50)
+    {
       totalCurrent += current;
       validSamples++;
     }
 
-    if ((i + 1) % 30 == 0) {
-      Serial.printf("  [%d/%d] Progresso: %.1f%%\n", i + 1, SAMPLES_PER_READING, ((i + 1) * 100.0) / SAMPLES_PER_READING);
+    if ((i + 1) % 10 == 0 || i == 0)
+    {
+      Serial.printf("  [%d/%d] Progresso: %.1f%% | Última leitura: %.3f A\n",
+                    i + 1, SAMPLES_PER_READING,
+                    ((i + 1) * 100.0) / SAMPLES_PER_READING,
+                    current);
     }
 
     delay(SAMPLE_INTERVAL_MS);
   }
 
-  if (validSamples > 0) {
+  if (validSamples > 0)
+  {
     float avgCurrent = totalCurrent / validSamples;
     float avgPower = avgCurrent * VOLTAGE_NOMINAL;
 
@@ -156,7 +211,9 @@ void loop() {
     Serial.println("========================================\n");
 
     sendReading(avgCurrent, VOLTAGE_NOMINAL, avgPower, validSamples);
-  } else {
+  }
+  else
+  {
     Serial.println("ERRO: Nenhuma amostra válida coletada!");
   }
 }
@@ -165,8 +222,10 @@ void loop() {
 // FUNÇÕES AUXILIARES
 // ============================================================================
 
-bool ensureWiFiConnected() {
-  if (WiFi.status() == WL_CONNECTED) {
+bool ensureWiFiConnected()
+{
+  if (WiFi.status() == WL_CONNECTED)
+  {
     return true;
   }
 
@@ -174,17 +233,20 @@ bool ensureWiFiConnected() {
   return connectWiFi();
 }
 
-bool connectWiFi() {
+bool connectWiFi()
+{
   Serial.printf("Conectando ao WiFi: %s", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   unsigned long startAttempt = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < WIFI_CONNECT_TIMEOUT_MS) {
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < WIFI_CONNECT_TIMEOUT_MS)
+  {
     delay(500);
     Serial.print(".");
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED)
+  {
     Serial.println(" OK");
     Serial.printf("IP: %s\n", WiFi.localIP().toString().c_str());
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
@@ -196,46 +258,49 @@ bool connectWiFi() {
   return false;
 }
 
-float readCurrentRMS() {
-  unsigned long startMillis = millis();
-  long sumSquares = 0;
-  int sampleCount = 0;
+float readCurrentRMS()
+{
+  long sum_of_squares = 0;
+  int sensorValue;
+  int num_samples = 0;
 
-  while (millis() - startMillis < RMS_WINDOW_MS) {
-    int raw = analogRead(SENSOR_PIN);
-    long valueMinusOffset = raw - ACS_OFFSET;
-    sumSquares += valueMinusOffset * valueMinusOffset;
-    sampleCount++;
+  unsigned long startMillis = millis();
+  while (millis() - startMillis < RMS_WINDOW_MS)
+  {
+    sensorValue = analogRead(SENSOR_PIN);
+    long value_minus_offset = sensorValue - ACS_OFFSET;
+    sum_of_squares += (value_minus_offset * value_minus_offset);
+    num_samples++;
     delayMicroseconds(RMS_SAMPLE_DELAY_US);
   }
 
-  if (sampleCount == 0) {
-    return 0;
+  float mean_square = (float)sum_of_squares / num_samples;
+  float rms_adc = sqrt(mean_square);
+  float rms_voltage = rms_adc * (ADC_VREF / ADC_RESOLUTION);
+  float current_rms = rms_voltage / ACS_SENSITIVITY;
+
+  // Zona Morta (Dead Zone)
+  if (current_rms < CURRENT_DEAD_ZONE)
+  {
+    current_rms = 0.0;
   }
 
-  float meanSquare = static_cast<float>(sumSquares) / sampleCount;
-  float rmsAdc = sqrt(meanSquare);
-  float rmsVoltage = rmsAdc * (ADC_VREF / ADC_RESOLUTION);
-  float currentRms = rmsVoltage / ACS_SENSITIVITY;
-
-  if (currentRms < CURRENT_DEAD_ZONE) {
-    return 0;
-  }
-
-  return currentRms;
+  return current_rms;
 }
 
-String getISOTimestamp() {
+String getISOTimestamp()
+{
   timeClient.update();
   unsigned long epochTime = timeClient.getEpochTime();
 
-  if (epochTime < 1577836800) {
+  if (epochTime < 1577836800)
+  {
     Serial.println("Aviso: Timestamp NTP parece incorreto, usando fallback");
     epochTime = 1698700000 + (millis() / 1000);
   }
 
   time_t rawTime = static_cast<time_t>(epochTime);
-  struct tm* timeinfo = gmtime(&rawTime);
+  struct tm *timeinfo = gmtime(&rawTime);
 
   char buffer[32];
   sprintf(buffer, "%04d-%02d-%02dT%02d:%02d:%02d-03:00",
@@ -249,12 +314,14 @@ String getISOTimestamp() {
   return String(buffer);
 }
 
-void sendReading(float current, float voltage, float power, int sampleCount) {
+void sendReading(float current, float voltage, float power, int sampleCount)
+{
   Serial.println("----------------------------------------");
   Serial.println("ENVIANDO PARA SUPABASE");
   Serial.println("----------------------------------------");
 
-  if (!ensureWiFiConnected()) {
+  if (!ensureWiFiConnected())
+  {
     Serial.println("WiFi indisponível, cancelando envio.");
     return;
   }
@@ -263,7 +330,8 @@ void sendReading(float current, float voltage, float power, int sampleCount) {
   client.setInsecure();
 
   HTTPClient http;
-  if (!http.begin(client, SUPABASE_URL)) {
+  if (!http.begin(client, SUPABASE_URL))
+  {
     Serial.println("ERRO: Falha ao iniciar conexão HTTPS.");
     return;
   }
@@ -293,21 +361,31 @@ void sendReading(float current, float voltage, float power, int sampleCount) {
   int httpCode = http.POST(payload);
   Serial.printf("HTTP Status: %d\n", httpCode);
 
-  if (httpCode > 0) {
+  if (httpCode > 0)
+  {
     String response = http.getString();
     Serial.println("Resposta:");
     Serial.println(response);
 
-    if (httpCode == 200 || httpCode == 201) {
+    if (httpCode == 200 || httpCode == 201)
+    {
       Serial.println("Leitura enviada com sucesso!");
-    } else if (httpCode == 429) {
+    }
+    else if (httpCode == 429)
+    {
       Serial.println("Rate limit atingido! Aguarde antes de enviar novamente.");
-    } else if (httpCode == 401 || httpCode == 403) {
+    }
+    else if (httpCode == 401 || httpCode == 403)
+    {
       Serial.println("ERRO: Credenciais inválidas para Supabase!");
-    } else if (httpCode >= 400) {
+    }
+    else if (httpCode >= 400)
+    {
       Serial.println("ERRO: Supabase rejeitou o payload.");
     }
-  } else {
+  }
+  else
+  {
     Serial.printf("ERRO HTTP: %s\n", http.errorToString(httpCode).c_str());
   }
 
