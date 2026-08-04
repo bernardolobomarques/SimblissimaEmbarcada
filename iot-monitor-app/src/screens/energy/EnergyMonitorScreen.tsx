@@ -14,9 +14,10 @@ import { EnergyReading } from '../../types/energy.types'
 import { Device } from '../../types/device.types'
 import { COLORS } from '../../constants/colors'
 import { formatPower, formatEnergy, formatCurrency, formatTime } from '../../utils/formatters'
-import { APP_CONFIG } from '../../constants/config'
+import { APP_CONFIG, USE_MOCK_DATA } from '../../constants/config'
 import { useAuth } from '../../hooks/useAuth'
 import { deviceService } from '../../services/device.service'
+import { getMockEnergyReadings } from '../../services/mockData'
 
 const safeConsole: any = (globalThis as any)?.console
 
@@ -78,13 +79,17 @@ export default function EnergyMonitorScreen() {
       setLoading(true)
 
       // Buscar últimas 50 leituras
-      const { data } = await supabase
-        .from('energy_readings')
-        .select('*')
-        .eq('device_id', deviceId)
-        .order('timestamp', { ascending: false })
-        .limit(50)
-      
+      const data = USE_MOCK_DATA
+        ? getMockEnergyReadings(deviceId, 50)
+        : (
+            await supabase
+              .from('energy_readings')
+              .select('*')
+              .eq('device_id', deviceId)
+              .order('timestamp', { ascending: false })
+              .limit(50)
+          ).data
+
       if (data && data.length > 0) {
         setReadings(data)
         setCurrentPower(data[0].power_watts)
@@ -280,11 +285,13 @@ export default function EnergyMonitorScreen() {
           </View>
 
           <Paragraph style={styles.progressLabel}>Utilização do limite configurado</Paragraph>
-          <ProgressBar
-            progress={utilizationRatio}
-            color={utilizationColor}
-            style={styles.progressBar}
-          />
+          <View style={styles.progressBarWrapper}>
+            <ProgressBar
+              progress={utilizationRatio}
+              color={utilizationColor}
+              style={styles.progressBar}
+            />
+          </View>
           <Paragraph style={styles.progressFooter}>
             Margem calculada: {(demoMaxCurrent - estimatedCurrent).toFixed(1)} A
           </Paragraph>
@@ -446,7 +453,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    height: '100%',
+    alignSelf: 'stretch',
     backgroundColor: COLORS.grayLight,
     marginHorizontal: 12,
     borderRadius: 1,
@@ -470,10 +477,15 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 16,
   },
+  progressBarWrapper: {
+    height: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginVertical: 8,
+  },
   progressBar: {
     height: 10,
     borderRadius: 10,
-    marginVertical: 8,
   },
   progressFooter: {
     fontSize: 12,

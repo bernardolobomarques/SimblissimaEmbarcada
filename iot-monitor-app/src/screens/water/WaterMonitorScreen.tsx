@@ -18,7 +18,7 @@ import { Device } from '../../types/device.types'
 import EmptyState from '../../components/common/EmptyState'
 
 const screenWidth = Dimensions.get('window').width
-const chartWidth = Math.min(screenWidth - 48, 420)
+const fallbackChartWidth = Math.min(screenWidth - 48, 420)
 const chartHeight = 170
 
 const safeConsole: any = (globalThis as any)?.console
@@ -31,6 +31,7 @@ export default function WaterMonitorScreen() {
   const [loadingDevices, setLoadingDevices] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [usingEnergyFallback, setUsingEnergyFallback] = useState(false)
+  const [chartContainerWidth, setChartContainerWidth] = useState(fallbackChartWidth)
 
   const {
     readings,
@@ -122,7 +123,8 @@ export default function WaterMonitorScreen() {
   const historyValues = historyPoints.map((reading) => reading.water_level_percent)
 
   const chartData = {
-    labels: historyPoints.map((reading) => formatTime(reading.timestamp)),
+    // Mostra rótulo só a cada 2 pontos para não sobrepor no eixo X
+    labels: historyPoints.map((reading, index) => (index % 2 === 0 ? formatTime(reading.timestamp) : '')),
     datasets: [
       {
         data: historyValues,
@@ -232,11 +234,13 @@ export default function WaterMonitorScreen() {
                   <Paragraph style={styles.statusMeta}>Capacidade {formatVolume(capacityLiters)}</Paragraph>
                 </View>
               </View>
-              <ProgressBar
-                progress={Math.min(levelPercent / 100, 1)}
-                color={levelColor}
-                style={styles.statusProgress}
-              />
+              <View style={styles.statusProgressWrapper}>
+                <ProgressBar
+                  progress={Math.min(levelPercent / 100, 1)}
+                  color={levelColor}
+                  style={styles.statusProgress}
+                />
+              </View>
               <View style={styles.factsRow}>
                 {quickFacts.map((fact) => (
                   <View key={fact.label} style={styles.factItem}>
@@ -254,38 +258,48 @@ export default function WaterMonitorScreen() {
                 <Title style={styles.sectionTitle}>Histórico recente</Title>
                 <Paragraph style={styles.chartHint}>Últimas leituras (% ao longo do tempo)</Paragraph>
               </View>
-              {historyPoints.length ? (
-                <LineChart
-                  data={chartData}
-                  width={chartWidth}
-                  height={chartHeight}
-                  withInnerLines={false}
-                  bezier
-                  fromZero
-                  segments={4}
-                  yAxisSuffix="%"
-                  style={styles.chart}
-                  chartConfig={{
-                    backgroundGradientFrom: GRADIENTS.water[0],
-                    backgroundGradientTo: GRADIENTS.water[1],
-                    decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.8})`,
-                    style: {
-                      borderRadius: 12,
-                    },
-                    propsForDots: {
-                      r: '3',
-                      strokeWidth: '1',
-                      stroke: COLORS.white,
-                    },
-                  }}
-                />
-              ) : (
-                <Paragraph style={styles.emptyHistory}>
-                  Ainda não há leituras suficientes para exibir um gráfico.
-                </Paragraph>
-              )}
+              <View
+                style={styles.chartMeasureWrapper}
+                onLayout={(event) => {
+                  const measuredWidth = event.nativeEvent.layout.width
+                  if (measuredWidth > 0 && Math.round(measuredWidth) !== Math.round(chartContainerWidth)) {
+                    setChartContainerWidth(measuredWidth)
+                  }
+                }}
+              >
+                {historyPoints.length ? (
+                  <LineChart
+                    data={chartData}
+                    width={chartContainerWidth}
+                    height={chartHeight}
+                    withInnerLines={false}
+                    bezier
+                    fromZero
+                    segments={4}
+                    yAxisSuffix="%"
+                    style={styles.chart}
+                    chartConfig={{
+                      backgroundGradientFrom: GRADIENTS.water[0],
+                      backgroundGradientTo: GRADIENTS.water[1],
+                      decimalPlaces: 0,
+                      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.8})`,
+                      style: {
+                        borderRadius: 12,
+                      },
+                      propsForDots: {
+                        r: '3',
+                        strokeWidth: '1',
+                        stroke: COLORS.white,
+                      },
+                    }}
+                  />
+                ) : (
+                  <Paragraph style={styles.emptyHistory}>
+                    Ainda não há leituras suficientes para exibir um gráfico.
+                  </Paragraph>
+                )}
+              </View>
             </Card.Content>
           </Card>
         </View>
@@ -424,6 +438,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: COLORS.backdropMuted,
     marginBottom: 16,
+    overflow: 'hidden',
   },
   statusHeader: {
     flexDirection: 'row',
@@ -448,8 +463,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'right',
   },
-  statusProgress: {
+  statusProgressWrapper: {
+    height: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
     marginVertical: 12,
+  },
+  statusProgress: {
     height: 8,
     borderRadius: 8,
     backgroundColor: COLORS.backdrop,
@@ -487,6 +507,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     fontSize: 12,
     marginTop: 4,
+  },
+  chartMeasureWrapper: {
+    width: '100%',
+    alignItems: 'center',
   },
   chart: {
     marginTop: 4,
