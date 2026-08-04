@@ -6,12 +6,18 @@
 import { supabase } from './supabase'
 import { Alert, AlertType, AlertSeverity } from '../types/device.types'
 import * as Notifications from 'expo-notifications'
+import { USE_MOCK_DATA } from '../constants/config'
+import { MOCK_ALERTS } from './mockData'
 
 export const alertsService = {
   /**
    * Busca alertas do usuário
    */
   async getAlerts(userId: string, limit: number = 50): Promise<Alert[]> {
+    if (USE_MOCK_DATA) {
+      return MOCK_ALERTS.slice(0, limit)
+    }
+
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
@@ -31,6 +37,10 @@ export const alertsService = {
    * Busca alertas não lidos
    */
   async getUnreadAlerts(userId: string): Promise<Alert[]> {
+    if (USE_MOCK_DATA) {
+      return MOCK_ALERTS.filter((alert) => !alert.is_read)
+    }
+
     const { data, error } = await supabase
       .from('alerts')
       .select('*')

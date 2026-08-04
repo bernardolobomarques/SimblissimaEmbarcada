@@ -122,7 +122,8 @@ export default function WaterMonitorScreen() {
   const historyValues = historyPoints.map((reading) => reading.water_level_percent)
 
   const chartData = {
-    labels: historyPoints.map((reading) => formatTime(reading.timestamp)),
+    // Mostra rótulo só a cada 2 pontos para não sobrepor no eixo X
+    labels: historyPoints.map((reading, index) => (index % 2 === 0 ? formatTime(reading.timestamp) : '')),
     datasets: [
       {
         data: historyValues,
@@ -232,11 +233,13 @@ export default function WaterMonitorScreen() {
                   <Paragraph style={styles.statusMeta}>Capacidade {formatVolume(capacityLiters)}</Paragraph>
                 </View>
               </View>
-              <ProgressBar
-                progress={Math.min(levelPercent / 100, 1)}
-                color={levelColor}
-                style={styles.statusProgress}
-              />
+              <View style={styles.statusProgressWrapper}>
+                <ProgressBar
+                  progress={Math.min(levelPercent / 100, 1)}
+                  color={levelColor}
+                  style={styles.statusProgress}
+                />
+              </View>
               <View style={styles.factsRow}>
                 {quickFacts.map((fact) => (
                   <View key={fact.label} style={styles.factItem}>
@@ -448,8 +451,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'right',
   },
-  statusProgress: {
+  statusProgressWrapper: {
+    height: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
     marginVertical: 12,
+  },
+  statusProgress: {
     height: 8,
     borderRadius: 8,
     backgroundColor: COLORS.backdrop,

@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../services/supabase'
 import { RealtimeChannel } from '@supabase/supabase-js'
+import { USE_MOCK_DATA } from '../constants/config'
 
 type TableName = 'energy_readings' | 'water_readings' | 'alerts'
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE' | '*'
@@ -32,6 +33,12 @@ export function useRealtime({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Sem backend real, não há canal para assinar - os dados mockados são
+    // estáticos e as telas já se atualizam via polling (dataRefreshInterval).
+    if (USE_MOCK_DATA) {
+      return
+    }
+
     try {
       const channelName = `${table}-realtime-${Date.now()}`
       const newChannel = supabase.channel(channelName)

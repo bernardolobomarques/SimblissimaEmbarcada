@@ -6,12 +6,18 @@
 import { supabase } from './supabase'
 import { WaterReading, WaterStats, ConsumptionRate, WaterContainerConfig } from '../types/water.types'
 import { calculateWaterLevel, calculateCylindricalCapacityLiters, calculateCylindricalVolumeFromHeight } from '../utils/calculations'
+import { USE_MOCK_DATA } from '../constants/config'
+import { getMockWaterReadings, MOCK_WATER_CONTAINER_CONFIG, MOCK_WATER_DEVICE_ID } from './mockData'
 
 export const waterService = {
   /**
    * Busca últimas leituras de água
    */
   async getLatestReadings(deviceId: string, limit: number = 50): Promise<WaterReading[]> {
+    if (USE_MOCK_DATA) {
+      return getMockWaterReadings(deviceId, limit)
+    }
+
     const { data, error } = await supabase
       .from('water_readings')
       .select('*')
@@ -28,6 +34,10 @@ export const waterService = {
   },
 
   async getContainerConfig(deviceId: string): Promise<WaterContainerConfig | null> {
+    if (USE_MOCK_DATA) {
+      return deviceId === MOCK_WATER_DEVICE_ID ? { ...MOCK_WATER_CONTAINER_CONFIG } : null
+    }
+
     const { data, error } = await supabase
       .from('devices')
       .select('water_tank_height_cm, water_tank_radius_cm, water_sensor_offset_cm, water_tank_capacity_liters, updated_at')

@@ -11,6 +11,8 @@ import { supabase } from '../../services/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants/colors'
 import { formatPower, formatPercent } from '../../utils/formatters'
+import { USE_MOCK_DATA } from '../../constants/config'
+import { MOCK_ENERGY_READINGS, MOCK_WATER_READINGS, MOCK_DEVICES } from '../../services/mockData'
 
 const safeConsole: any = (globalThis as any)?.console
 
@@ -44,31 +46,43 @@ export default function HomeScreen() {
       setLoading(true)
 
       // Buscar última leitura de energia
-      const { data: energyData } = await supabase
-        .from('energy_readings')
-        .select('power_watts')
-        .order('timestamp', { ascending: false })
-        .limit(1)
-        .single()
-      
+      const energyData = USE_MOCK_DATA
+        ? MOCK_ENERGY_READINGS[0]
+        : (
+            await supabase
+              .from('energy_readings')
+              .select('power_watts')
+              .order('timestamp', { ascending: false })
+              .limit(1)
+              .single()
+          ).data
+
       if (energyData) setEnergyPower(energyData.power_watts)
 
       // Buscar última leitura de água
-      const { data: waterData } = await supabase
-        .from('water_readings')
-        .select('water_level_percent')
-        .order('timestamp', { ascending: false })
-        .limit(1)
-        .single()
-      
+      const waterData = USE_MOCK_DATA
+        ? MOCK_WATER_READINGS[0]
+        : (
+            await supabase
+              .from('water_readings')
+              .select('water_level_percent')
+              .order('timestamp', { ascending: false })
+              .limit(1)
+              .single()
+          ).data
+
       if (waterData) setWaterLevel(waterData.water_level_percent)
 
       // Contar dispositivos online e carregar metadados
-      const { data: devices } = await supabase
-        .from('devices')
-        .select('device_type, is_active, metadata')
-        .eq('is_active', true)
-        .eq('user_id', user?.id)
+      const devices = USE_MOCK_DATA
+        ? MOCK_DEVICES.filter((d) => d.is_active && d.user_id === user?.id)
+        : (
+            await supabase
+              .from('devices')
+              .select('device_type, is_active, metadata')
+              .eq('is_active', true)
+              .eq('user_id', user?.id)
+          ).data
 
       if (devices) {
         const energyDevices = devices.filter((d: DashboardDevice) => d.device_type === 'energy')

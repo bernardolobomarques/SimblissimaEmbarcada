@@ -3,6 +3,15 @@
  * Inclui configuração do Supabase, tarifas e thresholds
  */
 
+/**
+ * O backend Supabase original do projeto não está mais disponível.
+ * Enquanto isso, o app roda com dados mockados (src/services/mockData.ts)
+ * para manter o dashboard funcional e apresentável (ex.: screenshots para
+ * os artigos). Ver TODO.md. Trocar para `false` quando houver um backend
+ * real configurado novamente.
+ */
+export const USE_MOCK_DATA = true
+
 export const SUPABASE_CONFIG = {
   url: 'https://ybnobvonfxoqvlimfzpl.supabase.co',
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlibm9idm9uZnhvcXZsaW1menBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzU5MjYsImV4cCI6MjA3NTAxMTkyNn0.c2fbnHiI4tmfcWVousERTXrc9paM05w2GhoBoeagmOU',

@@ -9,6 +9,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../services/supabase'
 import { COLORS } from '../../constants/colors'
 import { formatPercent, formatPower, formatRelativeTime, formatVolume } from '../../utils/formatters'
+import { USE_MOCK_DATA } from '../../constants/config'
+import { MOCK_ENERGY_READINGS, MOCK_WATER_READINGS, MOCK_DEVICES } from '../../services/mockData'
 
 interface SummaryState {
   energyPower: number | null
@@ -67,25 +69,36 @@ export default function SummaryWebScreen() {
         setLoading(true)
       }
 
-      const [energyResult, waterResult, devicesResult] = await Promise.all([
-        supabase
-          .from('energy_readings')
-          .select('power_watts, timestamp')
-          .order('timestamp', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('water_readings')
-          .select('water_level_percent, volume_liters, tank_capacity_liters, timestamp')
-          .order('timestamp', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('devices')
-          .select('device_type')
-          .eq('is_active', true)
-          .eq('user_id', user.id),
-      ])
+      const [energyResult, waterResult, devicesResult] = USE_MOCK_DATA
+        ? [
+            { data: MOCK_ENERGY_READINGS[0] ?? null, error: null },
+            { data: MOCK_WATER_READINGS[0] ?? null, error: null },
+            {
+              data: MOCK_DEVICES.filter((d) => d.is_active && d.user_id === user.id).map((d) => ({
+                device_type: d.device_type,
+              })),
+              error: null,
+            },
+          ]
+        : await Promise.all([
+            supabase
+              .from('energy_readings')
+              .select('power_watts, timestamp')
+              .order('timestamp', { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            supabase
+              .from('water_readings')
+              .select('water_level_percent, volume_liters, tank_capacity_liters, timestamp')
+              .order('timestamp', { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            supabase
+              .from('devices')
+              .select('device_type')
+              .eq('is_active', true)
+              .eq('user_id', user.id),
+          ])
 
       if (energyResult.error) {
         throw new Error(energyResult.error.message)

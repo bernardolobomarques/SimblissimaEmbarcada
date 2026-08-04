@@ -6,6 +6,8 @@
 import { supabase } from './supabase'
 import { Device, DeviceType } from '../types/device.types'
 import { calculateCylindricalCapacityLiters } from '../utils/calculations'
+import { USE_MOCK_DATA } from '../constants/config'
+import { getMockDevicesByType, MOCK_DEVICES } from './mockData'
 
 const safeConsole: any = (globalThis as any)?.console
 
@@ -35,6 +37,10 @@ export const deviceService = {
    * Busca dispositivos do usuário filtrando por tipo opcionalmente
    */
   async getDevicesByType(userId: string, deviceType?: DeviceType): Promise<Device[]> {
+    if (USE_MOCK_DATA) {
+      return getMockDevicesByType(deviceType)
+    }
+
     const query = supabase
       .from('devices')
       .select('*')
@@ -70,6 +76,10 @@ export const deviceService = {
    * Busca um dispositivo específico
    */
   async getDeviceById(deviceId: string): Promise<Device | null> {
+    if (USE_MOCK_DATA) {
+      return MOCK_DEVICES.find((device) => device.id === deviceId) ?? null
+    }
+
     const { data, error } = await supabase
       .from('devices')
       .select('*')

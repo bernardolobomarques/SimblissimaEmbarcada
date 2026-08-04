@@ -8,8 +8,13 @@
 
 ## Artigo 3119 — Água (`artigo-3119-agua/`)
 
-- [ ] Adicionar `figs/dashboard.png` (referenciada no `.tex`, ausente no repo)
+- [x] `figs/dashboard.png` adicionada — screenshot da `WaterMonitorScreen` do app, gerado com dados mockados (ver seção "Backend Supabase" abaixo) já que o backend original saiu do ar
 - [ ] Preencher `refs.bib` com as entradas BibTeX das 10 chaves já citadas no texto (ver comentário no topo do arquivo)
+
+## Backend Supabase (app `iot-monitor-app/`)
+
+- O projeto Supabase original (`ybnobvonfxoqvlimfzpl.supabase.co`) não está mais disponível. Enquanto isso, o app roda com dados mockados determinísticos (`iot-monitor-app/src/services/mockData.ts`), controlados pela flag `USE_MOCK_DATA` em `iot-monitor-app/src/constants/config.ts`.
+- [ ] Se/quando houver um novo backend (Supabase ou outro), atualizar `SUPABASE_CONFIG` em `config.ts`, trocar `USE_MOCK_DATA` para `false` e validar as telas novamente antes de tirar novas screenshots para os artigos.
 
 ## Compilação LaTeX (ambos os artigos)
 
