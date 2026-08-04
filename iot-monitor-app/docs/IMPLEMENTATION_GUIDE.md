@@ -30,11 +30,7 @@ supabase login
 # Link ao projeto
 supabase link --project-ref ybnobvonfxoqvlimfzpl
 
-# Criar pasta de functions
-mkdir -p supabase/functions/iot-ingest
-
-# Copiar arquivo
-cp supabase-edge-function-iot-ingest.ts supabase/functions/iot-ingest/index.ts
+# A função já está em supabase/functions/iot-ingest/index.ts
 
 # Deploy
 supabase functions deploy iot-ingest
@@ -405,7 +401,7 @@ FROM water_readings;
 
 1. `ARCHITECTURE_ANALYSIS.md` - Análise completa de problemas e soluções
 2. `supabase-migration.sql` - Script SQL para rodar no Supabase
-3. `supabase-edge-function-iot-ingest.ts` - Edge Function para receber dados IoT
+3. `supabase/functions/iot-ingest/index.ts` - Edge Function para receber dados IoT
 4. `IOT_API_DOCS.md` - Documentação completa da API para ESP32
 5. `IMPLEMENTATION_GUIDE.md` - Este guia (você está aqui!)
 
