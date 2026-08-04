@@ -15,7 +15,7 @@
 ## Passo 3: Colar o Código
 
 1. Na área de código, **delete todo o conteúdo existente**
-2. Abra o arquivo: `iot-monitor-app/supabase-edge-function-iot-ingest.ts`
+2. Abra o arquivo: `iot-monitor-app/supabase/functions/iot-ingest/index.ts`
 3. **Copie TODO o código** desse arquivo
 4. **Cole** na área de código da Edge Function
 
@@ -64,6 +64,6 @@ SELECT generate_device_api_key('4b6d07de-007e-4bf5-a1f6-a3fdd08abf0e');
 
 ## 📝 Código da Edge Function
 
-O código completo está em: `iot-monitor-app/supabase-edge-function-iot-ingest.ts`
+O código completo está em: `iot-monitor-app/supabase/functions/iot-ingest/index.ts`
 
 **IMPORTANTE:** A Edge Function usa a `SERVICE_ROLE_KEY` que **bypassa as políticas RLS**, por isso é seguro e funciona!
