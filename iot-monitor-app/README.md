@@ -2,7 +2,7 @@
 
 **Aplicativo Unificado de Monitoramento de Energia e Água**
 
-Desenvolvido para o Simpósio Brasileiro de Telecomunicações (SBrT) 2025 no IBMEC-RJ.
+Desenvolvido para o Simpósio Brasileiro de Telecomunicações (SBrT) 2026 no IBMEC-RJ.
 
 ## 🚀 Sobre o Projeto
 
@@ -215,7 +215,7 @@ Este projeto foi desenvolvido para fins acadêmicos. Sugestões e melhorias são
 
 ## 📄 Licença
 
-Projeto acadêmico - SBrT 2025 IBMEC-RJ
+Projeto acadêmico - SBrT 2026 IBMEC-RJ
 
 ## 👥 Autores
 
@@ -224,7 +224,7 @@ Desenvolvido para o Simpósio Brasileiro de Telecomunicações e Aplicações (S
 ## 🙏 Agradecimentos
 
 - IBMEC-RJ
-- SBrT 2025
+- SBrT 2026
 - Comunidade React Native
 - Supabase
 

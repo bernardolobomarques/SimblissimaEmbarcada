@@ -1,6 +1,6 @@
 # SimblissimaEmbarcada
 
-Repositório do grupo Simblissima com dois artigos submetidos ao **SBrT 2025**
+Repositório do grupo Simblissima com dois artigos submetidos ao **SBrT 2026**
 (XLIII Brazilian Symposium on Telecommunications and Signal Processing, Natal,
 RN) e o código dos sistemas IoT que sustentam os artigos, desenvolvidos
 originalmente para as disciplinas de Sistemas Embarcados IBM3118 e IBM3119
@@ -44,11 +44,6 @@ bibtex sbrt2025-3118
 pdflatex sbrt2025-3118.tex
 pdflatex sbrt2025-3118.tex
 ```
-
-**Atenção:** no estado atual do repositório a compilação completa ainda não
-fecha — faltam algumas imagens e o preenchimento do `refs.bib`. Veja
-[`TODO.md`](TODO.md) para a lista completa de pendências antes de gerar o PDF
-final.
 
 ## Estrutura do repositório
 
